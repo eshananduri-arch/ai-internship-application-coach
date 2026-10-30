@@ -1,0 +1,1 @@
+# ai-internship-application-coach
