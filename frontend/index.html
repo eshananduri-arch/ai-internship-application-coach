@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="api-base" content="/api"><meta name="description" content="Turn your résumé into a role-specific, reviewed internship cover letter."><title>Firstrole Internship Coach</title><link rel="stylesheet" href="./assets/css/styles.css"></head><body><div id="firstrole-app" data-density="comfortable" aria-label="Firstrole internship application coach">
+
+
+  <header class="fr-header">
+    <div class="fr-brand"><span class="fr-brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></span><span>first<span>role</span></span></div>
+    <ol class="fr-steps" aria-label="Application progress">
+      <li data-step="intake" aria-current="step"><span class="fr-step-number">1</span> Your application</li>
+      <li data-step="review"><span class="fr-step-number">2</span> Review</li>
+      <li data-step="approved"><span class="fr-step-number">3</span> Download</li>
+    </ol>
+  </header>
+  <main class="fr-main">
+    <section id="fr-intake">
+      <p class="fr-kicker">Your experience. Your next opportunity.</p>
+      <h1>A better <em>first impression.</em></h1>
+      <p class="fr-subtitle">Your résumé tells the story. Let’s turn it into a focused cover letter for the role you want.</p>
+      <div class="fr-intake-layout">
+        <form id="fr-form" class="fr-form" novalidate>
+          <h2 class="fr-section-title"><span class="fr-mini-number">1</span> Start with your résumé</h2>
+          <input id="fr-file" type="file" accept=".pdf,.docx" hidden aria-label="Select a PDF or DOCX resume">
+          <button type="button" id="fr-upload" class="fr-upload">
+            <span class="fr-upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M4 16v4h16v-4"/></svg></span>
+            <strong id="fr-file-name">Drop your résumé here</strong>
+            <small id="fr-file-help">or click to browse · PDF or DOCX · Up to 5 MB</small>
+          </button>
+
+          <h2 class="fr-section-title"><span class="fr-mini-number">2</span> Choose your opportunity</h2>
+          <div class="fr-fields">
+            <div class="fr-field"><label for="fr-company" class="fr-label">Company</label><select id="fr-company" class="fr-control"><option value="">Choose company</option><option>Amazon</option><option>Microsoft</option><option>Google</option><option>NVIDIA</option><option>Deloitte</option></select></div>
+            <div class="fr-field"><label for="fr-role" class="fr-label">Internship role</label><select id="fr-role" class="fr-control" disabled><option value="">Choose company first</option></select></div>
+          </div>
+          <p id="fr-catalog-status" class="fr-field-help" role="status"></p><p id="fr-role-details" class="fr-role-details">15 fictional roles across 5 companies.</p>
+          <div class="fr-divider"></div>
+          <div class="fr-field"><label for="fr-name" class="fr-label">Full name for your signature</label><input id="fr-name" class="fr-control" autocomplete="name" placeholder="Your full name" maxlength="100"><p class="fr-field-help">Your final letter should be personal, with no empty placeholders.</p></div>
+          <p id="fr-input-error" class="fr-alert" role="alert" hidden></p>
+          <button id="fr-generate" type="submit" class="fr-button fr-primary fr-wide-button">Generate cover letter <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></button>
+          <p class="fr-privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></svg> No account needed</p>
+        </form>
+      </div>
+    </section>
+<section id="fr-processing" class="fr-processing" hidden aria-label="Generating cover letter"><p class="fr-kicker">Working on your application</p><h2>A letter built around your experience.</h2><p id="fr-processing-stage" class="fr-subtitle" role="status">Submitting your résumé securely…</p><div class="fr-progress-track" aria-hidden="true"><span></span></div><p class="fr-field-help">We’ll show the letter once drafting and review are complete. Please keep this tab open.</p><p id="fr-processing-error" class="fr-alert" role="alert" hidden></p><div class="fr-error-actions"><button type="button" id="fr-check-again" class="fr-button fr-primary" hidden>Check status again</button><button type="button" id="fr-processing-back" class="fr-button">Back to application</button></div></section>
+    <section id="fr-review" hidden aria-label="Review your cover letter">
+      <div class="fr-review-heading"><div><p class="fr-kicker">Make it yours</p><h1>Your letter, <em>ready for review.</em></h1><p class="fr-subtitle">Read it through, make any edits, and approve the exact version you want to keep.</p></div><button id="fr-back" class="fr-button fr-quiet" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H4m6-6-6 6 6 6"/></svg> Back to application</button></div>
+      <div class="fr-review-layout">
+        <div><div class="fr-editor-top"><span class="fr-label-pill">Your reviewed letter</span><button type="button" id="fr-edit" class="fr-text-button">Edit letter</button></div><div class="fr-paper"><p class="fr-paper-name" id="fr-review-name"></p><p class="fr-paper-sub" id="fr-review-role"></p><div class="fr-paper-rule"></div><label for="fr-editor" hidden>Cover letter</label><div id="fr-letter-body" class="fr-letter" aria-label="Cover letter"></div><textarea id="fr-editor" class="fr-editor" spellcheck="true" hidden maxlength="20000"></textarea><div class="fr-editor-bottom"><span id="fr-word-count"></span><span id="fr-edit-status">Ready for your review</span></div></div></div>
+        <aside class="fr-side"><h2>One last look.</h2><p>Make sure the letter reflects your experience and sounds like you.</p><dl class="fr-summary"><div><dt>Company</dt><dd id="fr-summary-company"></dd></div><div><dt>Role</dt><dd id="fr-summary-role"></dd></div><div><dt>Résumé</dt><dd id="fr-summary-file"></dd></div></dl><label class="fr-confirm"><input id="fr-confirm" type="checkbox"><span>I have reviewed this exact letter and approve this version.</span></label><p id="fr-review-error" class="fr-alert" role="alert" hidden></p><button id="fr-approve" type="button" class="fr-button fr-primary" disabled>Approve letter <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button><button id="fr-reject" type="button" class="fr-button">Reject letter</button><p id="fr-decision-status" class="fr-field-help" role="status" style="margin-top:15px">Only your approved version will be saved.</p></aside>
+      </div>
+    </section>
+    <section id="fr-approved" hidden aria-label="Download approved cover letter">
+      <p class="fr-kicker">Your next step starts here</p><h1>Good to go. <em>Make your move.</em></h1><p class="fr-subtitle">You approved this exact version. Take your cover letter with you.</p>
+      <div class="fr-review-layout"><div class="fr-paper"><p class="fr-paper-name" id="fr-final-name"></p><p class="fr-paper-sub" id="fr-final-role"></p><div class="fr-paper-rule"></div><div class="fr-letter" id="fr-final-letter"></div></div><aside class="fr-side"><div class="fr-success"><span class="fr-success-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span><div><h2 style="margin:0">Approved and saved</h2><span style="font-size:11px;color:var(--fr-secondary)">Your exact approved wording is preserved</span></div></div><div class="fr-field"><label class="fr-label" for="fr-download-format">Download format</label><select id="fr-download-format" class="fr-control"><option value="txt">Plain text (.txt)</option value="docx" disabled>Word (.docx) · full application</option><option value="pdf" disabled>PDF (.pdf) · full application</option></select></div><button id="fr-download" type="button" class="fr-button fr-primary" style="margin-top:18px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12m-4-4 4 4 4-4M4 17v3h16v-3"/></svg> Download cover letter</button><button id="fr-copy" type="button" class="fr-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg> Copy letter</button><p id="fr-download-note" aria-live="polite" style="margin-top:13px">Download the exact version you approved.</p><div class="fr-divider"></div><button id="fr-new" type="button" class="fr-text-button">Create another letter</button></aside></div>
+    </section>
+    <section id="fr-rejected" hidden aria-label="Letter rejected"><p class="fr-kicker">Always your decision</p><h1>Let’s take <em>another look.</em></h1><p class="fr-subtitle">You rejected this letter. No application was saved or sent.</p><button type="button" id="fr-restart" class="fr-button fr-primary">Change application</button></section>
+    <footer class="fr-footer"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg> Your letter. Your decision.</span><span>Fictional internship listings for an educational project.</span></footer>
+    <div id="fr-live" aria-live="polite" style="position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap"></div>
+  </main>
+
+</div>
+<script type="module" src="./assets/js/app.js"></script></body></html>
