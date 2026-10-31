@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "verified_on": "2026-10-31",
+  "python_tests": {
+    "passed": 27,
+    "skipped": 2,
+    "reason": "Real PostgreSQL HTTP tests require a configured existing restricted API credential and explicit opt-in"
+  },
+  "database_checks": {
+    "baseline": 34,
+    "runtime": 15,
+    "method": "Live administrative Supabase connector, synthetic transactions rolled back"
+  },
+  "exports": {
+    "docx": "Word-rendered, one page, visually inspected",
+    "pdf": "Rendered, one page, visually inspected",
+    "txt": "Exact text roundtrip tested"
+  },
+  "local_server": "http://127.0.0.1:8010",
+  "live_health": "200",
+  "readiness": "503: database runtime credentials and n8n are unconfigured",
+  "database_login_creation": "Declined by user; no new logins exist; unused local URLs cleared",
+  "deployed": false,
+  "n8n_end_to_end_tested": false,
+  "cross_process_python_worker_load_tested": false,
+  "frontend_checks": {
+    "passed": 46,
+    "method": "mocked API browser tests"
+  },
+  "generated_secrets_in_git_visible_files": false,
+  "repository_checkpoint": "v1.0.0"
+}

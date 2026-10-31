@@ -1,0 +1,6 @@
+{
+  "passed": 278,
+  "live_n8n_tested": false,
+  "database_tested": false,
+  "note": "Local code and workflow-structure checks only. Live credentials, import and retrieval still require the new account."
+}

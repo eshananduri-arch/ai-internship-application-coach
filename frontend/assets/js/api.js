@@ -25,8 +25,9 @@ async function request(path, { method = 'GET', body, key, binary = false, signal
   }
   if (!response.ok) {
     let message = `The request failed (${response.status}). Please try again.`;
-    try { const data = await response.json(); if (typeof data.message === 'string') message = data.message.slice(0, 300); } catch { /* HTML errors are never displayed. */ }
-    if (response.status === 404 || response.status === 503) message = 'The Python backend is not connected yet. This local frontend is ready for integration.';
+    let hasMessage = false;
+    try { const data = await response.json(); if (typeof data.message === 'string') { message = data.message.slice(0, 300); hasMessage = true; } } catch { /* HTML errors are never displayed. */ }
+    if (!hasMessage && (response.status === 404 || response.status === 503)) message = 'The Python backend is not connected yet. This local frontend is ready for integration.';
     throw new ApiError(message, response.status);
   }
   if (binary) return response;

@@ -1,0 +1,336 @@
+[
+  {
+    "role_id": "AMAZON-01",
+    "company": "Amazon",
+    "role": "SDE Intern",
+    "location": "Hyderabad",
+    "stipend_inr_month": 60000,
+    "deadline": "2026-12-15",
+    "required_skills": [
+      "Java or Python or C++",
+      "data structures",
+      "algorithms",
+      "OOP",
+      "Git"
+    ],
+    "preferred_skills": [
+      "AWS",
+      "SQL",
+      "REST APIs",
+      "Linux"
+    ]
+  },
+  {
+    "role_id": "AMAZON-02",
+    "company": "Amazon",
+    "role": "Cloud Support Intern",
+    "location": "Hyderabad",
+    "stipend_inr_month": 45000,
+    "deadline": "2026-12-18",
+    "required_skills": [
+      "Linux",
+      "networking basics",
+      "cloud fundamentals",
+      "troubleshooting",
+      "scripting"
+    ],
+    "preferred_skills": [
+      "AWS EC2/S3/IAM",
+      "Python",
+      "monitoring",
+      "SQL"
+    ]
+  },
+  {
+    "role_id": "AMAZON-03",
+    "company": "Amazon",
+    "role": "Data Analyst Intern",
+    "location": "Bengaluru",
+    "stipend_inr_month": 40000,
+    "deadline": "2026-12-22",
+    "required_skills": [
+      "SQL",
+      "Excel",
+      "Python",
+      "data cleaning",
+      "statistics",
+      "dashboards"
+    ],
+    "preferred_skills": [
+      "Pandas",
+      "QuickSight",
+      "AWS Athena",
+      "A/B testing"
+    ]
+  },
+  {
+    "role_id": "MICROSOFT-01",
+    "company": "Microsoft",
+    "role": "Software Engineering Intern",
+    "location": "Hyderabad",
+    "stipend_inr_month": 75000,
+    "deadline": "2026-12-20",
+    "required_skills": [
+      "C++ or C# or Java or Python",
+      "DSA",
+      "OOP",
+      "SQL",
+      "software fundamentals"
+    ],
+    "preferred_skills": [
+      "Azure",
+      "GitHub",
+      "REST APIs",
+      "unit testing",
+      "CI/CD"
+    ]
+  },
+  {
+    "role_id": "MICROSOFT-02",
+    "company": "Microsoft",
+    "role": "Azure Cloud Intern",
+    "location": "Hyderabad",
+    "stipend_inr_month": 60000,
+    "deadline": "2026-12-23",
+    "required_skills": [
+      "Cloud fundamentals",
+      "networking",
+      "Linux or Windows administration",
+      "scripting",
+      "security basics"
+    ],
+    "preferred_skills": [
+      "Azure services",
+      "PowerShell",
+      "Terraform",
+      "Docker",
+      "monitoring"
+    ]
+  },
+  {
+    "role_id": "MICROSOFT-03",
+    "company": "Microsoft",
+    "role": "AI Engineering Intern",
+    "location": "Bengaluru",
+    "stipend_inr_month": 70000,
+    "deadline": "2026-12-28",
+    "required_skills": [
+      "Python",
+      "ML fundamentals",
+      "data preprocessing",
+      "PyTorch or TensorFlow",
+      "model evaluation"
+    ],
+    "preferred_skills": [
+      "Azure AI",
+      "NLP",
+      "transformers",
+      "MLOps",
+      "Docker"
+    ]
+  },
+  {
+    "role_id": "GOOGLE-01",
+    "company": "Google",
+    "role": "Data Science Intern",
+    "location": "Bengaluru",
+    "stipend_inr_month": 70000,
+    "deadline": "2026-12-10",
+    "required_skills": [
+      "Python",
+      "Pandas",
+      "NumPy",
+      "SQL",
+      "statistics",
+      "visualization",
+      "ML basics"
+    ],
+    "preferred_skills": [
+      "Scikit-learn",
+      "BigQuery",
+      "TensorFlow",
+      "A/B testing"
+    ]
+  },
+  {
+    "role_id": "GOOGLE-02",
+    "company": "Google",
+    "role": "Software Engineering Intern",
+    "location": "Bengaluru",
+    "stipend_inr_month": 80000,
+    "deadline": "2026-12-16",
+    "required_skills": [
+      "Python or Java or C++",
+      "DSA",
+      "OOP",
+      "debugging",
+      "Git"
+    ],
+    "preferred_skills": [
+      "Distributed systems",
+      "testing",
+      "Linux",
+      "databases",
+      "APIs"
+    ]
+  },
+  {
+    "role_id": "GOOGLE-03",
+    "company": "Google",
+    "role": "Cloud Engineering Intern",
+    "location": "Hyderabad",
+    "stipend_inr_month": 65000,
+    "deadline": "2026-12-21",
+    "required_skills": [
+      "Cloud concepts",
+      "Linux",
+      "networking",
+      "Python",
+      "containers",
+      "Git"
+    ],
+    "preferred_skills": [
+      "Google Cloud",
+      "Kubernetes",
+      "Terraform",
+      "CI/CD",
+      "observability"
+    ]
+  },
+  {
+    "role_id": "NVIDIA-01",
+    "company": "NVIDIA",
+    "role": "AI/ML Intern",
+    "location": "Bengaluru",
+    "stipend_inr_month": 65000,
+    "deadline": "2026-12-25",
+    "required_skills": [
+      "Python",
+      "machine learning",
+      "deep learning",
+      "PyTorch or TensorFlow",
+      "NumPy",
+      "evaluation"
+    ],
+    "preferred_skills": [
+      "CUDA",
+      "C++",
+      "computer vision",
+      "transformers",
+      "GPU acceleration"
+    ]
+  },
+  {
+    "role_id": "NVIDIA-02",
+    "company": "NVIDIA",
+    "role": "Computer Vision Intern",
+    "location": "Bengaluru",
+    "stipend_inr_month": 70000,
+    "deadline": "2026-12-27",
+    "required_skills": [
+      "Python",
+      "OpenCV",
+      "image processing",
+      "CNNs",
+      "PyTorch",
+      "evaluation metrics"
+    ],
+    "preferred_skills": [
+      "Object detection",
+      "segmentation",
+      "CUDA",
+      "ONNX",
+      "deployment"
+    ]
+  },
+  {
+    "role_id": "NVIDIA-03",
+    "company": "NVIDIA",
+    "role": "Deep Learning Intern",
+    "location": "Bengaluru",
+    "stipend_inr_month": 75000,
+    "deadline": "2026-12-30",
+    "required_skills": [
+      "Python",
+      "neural networks",
+      "backpropagation",
+      "PyTorch",
+      "experiment tracking",
+      "statistics"
+    ],
+    "preferred_skills": [
+      "Transformers",
+      "distributed training",
+      "CUDA",
+      "optimization",
+      "MLOps"
+    ]
+  },
+  {
+    "role_id": "DELOITTE-01",
+    "company": "Deloitte",
+    "role": "Data Analyst Intern",
+    "location": "Hyderabad",
+    "stipend_inr_month": 25000,
+    "deadline": "2026-12-05",
+    "required_skills": [
+      "Excel",
+      "SQL",
+      "Python basics",
+      "data cleaning",
+      "visualization",
+      "analytical reasoning"
+    ],
+    "preferred_skills": [
+      "Power BI",
+      "Tableau",
+      "Pandas",
+      "business analytics"
+    ]
+  },
+  {
+    "role_id": "DELOITTE-02",
+    "company": "Deloitte",
+    "role": "Technology Consulting Intern",
+    "location": "Hyderabad",
+    "stipend_inr_month": 30000,
+    "deadline": "2026-12-12",
+    "required_skills": [
+      "Business analysis",
+      "communication",
+      "Excel",
+      "SQL",
+      "requirements gathering",
+      "documentation"
+    ],
+    "preferred_skills": [
+      "Python",
+      "cloud basics",
+      "process mapping",
+      "Agile",
+      "Power BI"
+    ]
+  },
+  {
+    "role_id": "DELOITTE-03",
+    "company": "Deloitte",
+    "role": "Cybersecurity Intern",
+    "location": "Hyderabad",
+    "stipend_inr_month": 35000,
+    "deadline": "2026-12-19",
+    "required_skills": [
+      "Networking",
+      "Linux",
+      "security fundamentals",
+      "log analysis",
+      "incident response basics"
+    ],
+    "preferred_skills": [
+      "SIEM",
+      "Python",
+      "OWASP",
+      "cloud security",
+      "vulnerability assessment"
+    ]
+  }
+]

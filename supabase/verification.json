@@ -1,0 +1,99 @@
+{
+  "project": {
+    "name": "internship-coach-dev",
+    "ref": "eztcigkqrhuyeyfgpaor",
+    "region": "ap-south-1",
+    "environment": "development",
+    "status": "ACTIVE_HEALTHY"
+  },
+  "verified_on": "2026-10-31",
+  "migrations": [
+    {
+      "version": "20261031143121",
+      "name": "foundation_and_knowledge",
+      "file_sha256": "61c9a709a3d70515a68f22b13c88e8578491930d43f987416ed711e7f218b2a7"
+    },
+    {
+      "version": "20261031143133",
+      "name": "private_application_records",
+      "file_sha256": "89e13ce1992abf6ba149f0981acc51c3d31364a99266c252d81ef716ad65fc0b"
+    },
+    {
+      "version": "20261031143336",
+      "name": "queue_and_worker_management",
+      "file_sha256": "f3b6817fd7c92828515b222eff1da595879e4c6cf564a93f8562402b6affaff8"
+    },
+    {
+      "version": "20261031143447",
+      "name": "seed_educational_catalog",
+      "file_sha256": "944ea56e70dd8c309e082b8c50ed8fda34705bbedfe08a516ca884a84d0d9d1c"
+    },
+    {
+      "version": "20261031143520",
+      "name": "approval_integrity_and_indexes",
+      "file_sha256": "1475f604f428188168a0a9fb91f8e863ce6fc62c95e4c9ae1e1050902a03b252"
+    },
+    {
+      "version": "20261031143721",
+      "name": "administrator_role_testing",
+      "file_sha256": "6cefe559a04aa9eadd4e0f93d80d3674514a6fd566c408ce374536335cba2757"
+    },
+    {
+      "version": "20261031143933",
+      "name": "align_queue_visibility_with_leases",
+      "file_sha256": "0d46407b3caa201131f21c91a131a9439a45d5fb7e28f58aa3725d7eeb61205a"
+    },
+    {
+      "version": "20261031150427",
+      "name": "backend_runtime_management",
+      "file_sha256": "caced7ec616806342a86bcb6d2aca2c891c411cf0ca6271f392b3bd58a22445e"
+    }
+  ],
+  "tests": {
+    "passed": 34,
+    "synthetic_fixtures": "rolled_back",
+    "concurrent_load_test": false,
+    "backend_runtime_passed": 15
+  },
+  "inventory": {
+    "companies": 5,
+    "roles": 15,
+    "source_documents": 5,
+    "embedded_chunks": 0,
+    "visitors": 0,
+    "jobs": 0,
+    "approved_applications": 0,
+    "queued_messages": 0,
+    "archived_messages": 0,
+    "active_slots": 0
+  },
+  "advisors": {
+    "security": [
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "table": "app.rate_limit_windows",
+        "intentional": "Direct access denied; restricted internal function only",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+      }
+    ],
+    "performance": [
+      {
+        "name": "unused_index",
+        "level": "INFO",
+        "count": 20,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index"
+      }
+    ]
+  },
+  "integration": {
+    "frontend_connected": false,
+    "backend_implemented": true,
+    "n8n_indexed": false,
+    "workers_deployed": false
+  },
+  "old_inactive_project": {
+    "ref": "twcfvyxijilqdcftgygy",
+    "deleted": false
+  }
+}

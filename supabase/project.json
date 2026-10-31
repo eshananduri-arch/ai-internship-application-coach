@@ -1,0 +1,24 @@
+{
+  "project_ref": "eztcigkqrhuyeyfgpaor",
+  "name": "internship-coach-dev",
+  "environment": "development",
+  "region": "ap-south-1",
+  "postgres_major_version": 17,
+  "repository": "https://github.com/eshananduri-arch/ai-internship-application-coach",
+  "migration_directory": "supabase/migrations",
+  "last_applied_migration": "20261031150427",
+  "connection": {
+    "host": "aws-0-ap-south-1.pooler.supabase.com",
+    "port": 5432,
+    "database": "postgres",
+    "method": "session_pooler",
+    "credentials": "Private environment configuration only; not included here"
+  },
+  "link_status": {
+    "schema_versioned_in_repository": true,
+    "cli_authenticated": false,
+    "dashboard_github_integration": "not_connected",
+    "automatic_deployment_enabled": false,
+    "python_runtime_connected": false
+  }
+}

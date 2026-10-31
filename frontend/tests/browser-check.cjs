@@ -79,7 +79,7 @@ async function visible(page, id) { await page.locator('#fr-' + id).waitFor({ sta
   await fill();
   await page.click('#fr-generate');
   await visible(page, 'input-error');
-  check((await page.textContent('#fr-input-error')).includes('backend'), 'offline generation fails honestly without a fake letter');
+  check((await page.textContent('#fr-input-error')).toLowerCase().includes('backend'), 'offline generation fails honestly without a fake letter');
   offline = false;
   await page.click('#fr-generate');
   await visible(page, 'review');
