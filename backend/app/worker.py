@@ -19,8 +19,8 @@ log=logging.getLogger('firstrole.worker')
 class WorkerManager:
     def __init__(self,settings,coach=None):
         self.settings=settings
-        self.db=Database(settings.worker_database_url.get_secret_value(),max(4,settings.max_worker_concurrency*2+2),'firstrole-worker')
-        self.ops=Database(settings.operator_database_url.get_secret_value(),2,'firstrole-controller')
+        self.db=Database(settings.worker_database_url.get_secret_value(),max(4,settings.max_worker_concurrency*2+2),'firstrole-worker',sslrootcert=settings.db_sslrootcert)
+        self.ops=Database(settings.operator_database_url.get_secret_value(),2,'firstrole-controller',sslrootcert=settings.db_sslrootcert)
         self.encryption=Encryption(settings)
         self.coach=coach or Coach(settings)
         self.worker_id=uuid4()

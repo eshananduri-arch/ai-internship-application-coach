@@ -1,0 +1,218 @@
+{
+  "name": "Final Knowledge Loader",
+  "nodes": [
+    {
+      "name": "Load Knowledge Manually",
+      "id": "b1387446-3e5e-5b8d-9ccd-0dc8ceacb732",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "parameters": {},
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Read Versioned Role Sources",
+      "id": "c1f983cd-8651-51c4-a2e9-bd677f22685c",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT r.role_id,r.company_id,c.name AS company,r.catalog_version,r.role_title,\n       r.deadline::text,r.required_skills,r.preferred_skills,\n       encode(sha256(convert_to(to_jsonb(r)::text,'UTF8')),'hex') AS role_sha256,\n       d.document_key,d.source_version,d.source_title,d.content,d.content_sha256\nFROM public.internship_roles r\nJOIN public.companies c USING(company_id)\nLEFT JOIN public.role_documents d ON d.company_id=r.company_id AND d.source_version=r.catalog_version\n  AND d.index_status<>'retired'\nWHERE r.active AND c.active\nORDER BY r.role_id;\n",
+        "options": {
+          "connectionTimeout": 15
+        }
+      },
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "name": "Prepare Role Embeddings",
+      "id": "4395ce84-1b13-58ec-b0b5-d95a37ed960f",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "// Shared trusted workflow helpers. No third-party modules or network access in Code nodes.\nfunction assert(condition, code) { if (!condition) throw new Error(code); }\nfunction fail(code) { throw new Error(code); }\nfunction first(name) { return $(name).first().json; }\nfunction one(json) { return [{json}]; }\nfunction normalize(text) { return text.replace(/\\r\\n?/g,'\\n'); }\nfunction words(text) { return text.split(/[\\u0009-\\u000d\\u001c-\\u0020\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]+/u).filter(Boolean).length; }\nfunction indiaToday() {\n  const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(p=>[p.type,p.value]));\n  return `${p.year}-${p.month}-${p.day}`;\n}\nfunction isoDate(value) {\n  assert(typeof value==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(value),'invalid_date');\n  const d=new Date(value+'T00:00:00Z');\n  assert(Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===value,'invalid_date');\n  return value;\n}\nfunction failure(e) {\n  const known=/^(invalid_|missing_|blocked_|role_|source_|provider_|model_|usage_|critic_|letter_|mcp_|configuration_|verification_)[a-z0-9_]+$/;\n  const error_code=known.test(e?.message||'')?e.message:'workflow_stage_failed';\n  const http_status=error_code==='provider_throttled'?429:\n    /^(invalid_|blocked_|role_expired|role_not_found)/.test(error_code)?422:502;\n  return one({failed:true,http_status,body:{status:'failed',error_code,\n    message:'The coaching pipeline could not complete this request. No application was approved or saved.'}});\n}\nfunction mcpObject(value,depth=0) {\n  assert(depth<8,'mcp_invalid_envelope');\n  if (typeof value==='string') {\n    let parsed;try { parsed=JSON.parse(value); } catch { fail('mcp_invalid_json'); }\n    return mcpObject(parsed,depth+1);\n  }\n  assert(value&&typeof value==='object'&&!value.isError&&!value.error,'mcp_tool_failed');\n  if (Array.isArray(value)) { assert(value.length===1,'mcp_ambiguous_result');return mcpObject(value[0],depth+1); }\n  if (typeof value.ok==='boolean') return value;\n  if (value.type==='text'&&typeof value.text==='string') return mcpObject(value.text,depth+1);\n  if (value.structuredContent) return mcpObject(value.structuredContent,depth+1);\n  if (Array.isArray(value.content)) {\n    const text=value.content.filter(c=>c.type==='text');assert(text.length===1,'mcp_ambiguous_result');\n    return mcpObject(text[0].text,depth+1);\n  }\n  if (value.json) return mcpObject(value.json,depth+1);\n  if (value.response) return mcpObject(value.response,depth+1);\n  fail('mcp_invalid_envelope');\n}\nfunction httpBody(response) {\n  assert(response&&!response.error,'provider_connection_failed');\n  if (response.statusCode===429) fail('provider_throttled');\n  assert(response.statusCode===200,'provider_http_failed');\n  assert(response.body&&typeof response.body==='object','provider_invalid_body');\n  return response.body;\n}\nfunction generation(response,previous) {\n  const b=httpBody(response), c=b.candidates;\n  assert(Array.isArray(c)&&c.length===1&&c[0].finishReason==='STOP','model_incomplete_output');\n  const parts=c[0].content?.parts;\n  assert(Array.isArray(parts)&&parts.length>0&&!parts.some(p=>p.functionCall),'model_invalid_output');\n  const text=parts.filter(p=>typeof p.text==='string'&&!p.thought).map(p=>p.text).join('');\n  assert(text.length<=15000,'model_output_too_large');\n  let value;try { value=JSON.parse(text); } catch { fail('model_invalid_json'); }\n  assert(value&&typeof value==='object'&&!Array.isArray(value),'model_invalid_json');\n  const u=b.usageMetadata;\n  assert(u&&Number.isInteger(u.promptTokenCount)&&Number.isInteger(u.candidatesTokenCount)&&Number.isInteger(u.totalTokenCount),'missing_usage_metadata');\n  assert(u.promptTokenCount>=0&&u.candidatesTokenCount>=0&&u.totalTokenCount>=u.promptTokenCount+u.candidatesTokenCount,'usage_invalid_metadata');\n  const usage={input_tokens:previous.input_tokens+u.promptTokenCount,\n    output_tokens:previous.output_tokens+(u.totalTokenCount-u.promptTokenCount),\n    model:previous.model}; // Includes thought/tool tokens in total rather than silently undercounting.\n  assert(usage.input_tokens+usage.output_tokens<=12000,'usage_exceeds_budget');\n  return {value,usage};\n}\nfunction exactKeys(obj,keys,code='model_invalid_schema') {\n  assert(obj&&typeof obj==='object'&&!Array.isArray(obj)&&Object.keys(obj).sort().join('|')===[...keys].sort().join('|'),code);\n}\nfunction strings(value,max=6,size=500) {\n  assert(Array.isArray(value)&&value.length<=max&&value.every(v=>typeof v==='string'&&v.length<=size&&!/[\\u0000-\\u0008]/.test(v)),'model_invalid_schema');\n  return value;\n}\nfunction modelRequest(system,data,schema,maxOutputTokens) {\n  // Gemini 3.5 Flash-Lite uses default minimal thinking. Deprecated sampling/budget fields are omitted.\n  return {systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:JSON.stringify(data)}]}],\n    generationConfig:{maxOutputTokens,responseMimeType:'application/json',responseSchema:schema}};\n}\nfunction schemaObject(properties) {return {type:'OBJECT',properties,required:Object.keys(properties)};}\nconst textSchema={type:'STRING'}, listSchema={type:'ARRAY',items:textSchema};\nfunction cleanBody(body) {\n  assert(typeof body==='string','letter_invalid_body');body=normalize(body).trim();\n  assert(body.length>=100&&body.length<=3500&&words(body)<=210,'letter_invalid_length');\n  assert(!/```|\\*\\*|\\[(?:your|candidate|insert|name|company|role|date|address|email|phone)[^\\]]*\\]|<(?:EMAIL_ADDRESS|PHONE_NUMBER|NAME|PERSON)>/i.test(body),'letter_placeholders');\n  assert(!/^(?:dear|to the)\\b/i.test(body)&&!/^\\s*(?:sincerely|regards|yours truly|yours faithfully)\\b/im.test(body),'letter_body_only');\n  assert(!/[\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]/.test(body),'letter_invalid_characters');\n  return body;\n}\n\nfunction sha256(value) {\n  const bytes = [];\n  for (const char of value) {\n    let cp = char.codePointAt(0);\n    if (cp >= 0xd800 && cp <= 0xdfff) cp = 0xfffd;\n    if (cp < 0x80) bytes.push(cp);\n    else if (cp < 0x800) bytes.push(0xc0 | (cp >> 6), 0x80 | (cp & 63));\n    else if (cp < 0x10000) bytes.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));\n    else bytes.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));\n  }\n  const bits = bytes.length * 8;\n  bytes.push(0x80);\n  while (bytes.length % 64 !== 56) bytes.push(0);\n  for (let shift = 7; shift >= 0; shift--) bytes.push(Math.floor(bits / (2 ** (shift * 8))) & 255);\n  const k = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];\n  const h = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];\n  const rotr = (x, n) => (x >>> n) | (x << (32 - n));\n  for (let offset = 0; offset < bytes.length; offset += 64) {\n    const w = new Array(64);\n    for (let i = 0; i < 16; i++) w[i] = ((bytes[offset+i*4]<<24) | (bytes[offset+i*4+1]<<16) | (bytes[offset+i*4+2]<<8) | bytes[offset+i*4+3]) >>> 0;\n    for (let i = 16; i < 64; i++) {\n      const s0 = rotr(w[i-15],7) ^ rotr(w[i-15],18) ^ (w[i-15] >>> 3);\n      const s1 = rotr(w[i-2],17) ^ rotr(w[i-2],19) ^ (w[i-2] >>> 10);\n      w[i] = (w[i-16] + s0 + w[i-7] + s1) >>> 0;\n    }\n    let [a,b,c,d,e,f,g,hh] = h;\n    for (let i = 0; i < 64; i++) {\n      const s1 = rotr(e,6) ^ rotr(e,11) ^ rotr(e,25);\n      const t1 = (hh + s1 + ((e & f) ^ (~e & g)) + k[i] + w[i]) >>> 0;\n      const s0 = rotr(a,2) ^ rotr(a,13) ^ rotr(a,22);\n      const t2 = (s0 + ((a & b) ^ (a & c) ^ (b & c))) >>> 0;\n      hh=g; g=f; f=e; e=(d+t1)>>>0; d=c; c=b; b=a; a=(t1+t2)>>>0;\n    }\n    [a,b,c,d,e,f,g,hh].forEach((value, i) => { h[i] = (h[i] + value) >>> 0; });\n  }\n  return h.map(value => value.toString(16).padStart(8, '0')).join('');\n}\n\nconst rows=$input.all().map(i=>i.json);assert(rows.length>=1&&rows.length<=100,'source_invalid_catalog');\nassert(new Set(rows.map(r=>r.role_id)).size===rows.length,'source_duplicate_role');\nconst prepared=rows.map(r=>{\n assert(typeof r.content==='string'&&r.content.length>0,'source_document_missing');\n assert(/^[A-Z]+-\\d{2}$/.test(r.role_id)&&r.catalog_version===r.source_version,'source_version_mismatch');\n const parts=normalize(r.content).split(/(?=^##\\s+)/m);\n const sections=parts.filter(p=>new RegExp('^Role ID:\\\\s*'+r.role_id+'\\\\s*$','m').test(p));\n assert(sections.length===1,'source_role_section_missing');\n const section=sections[0].trim();\n assert((section.match(/^Role ID:/gm)||[]).length===1&&section.includes(r.role_title)&&section.includes(r.deadline),'source_role_section_invalid');\n assert(section.length<=12000,'source_role_section_too_long');\n const text='Educational simulated internship listing. Not a verified live vacancy.\\n'+section;\n return {text,metadata:{dataset:'internship_roles',role_id:r.role_id,company:r.company,source_title:r.source_title,\n   source_version:r.source_version,catalog_version:r.catalog_version,document_key:r.document_key,\n   source_sha256:r.content_sha256,role_sha256:r.role_sha256,embedding_model:'models/gemini-embedding-001'}};\n});\nreturn one({prepared,embedding_request:{requests:prepared.map(r=>({model:'models/gemini-embedding-001',\n content:{parts:[{text:r.text}]},taskType:'RETRIEVAL_DOCUMENT',title:r.metadata.source_title,outputDimensionality:3072}))}});\n"
+      },
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "name": "Embed All Role Documents",
+      "id": "cb8a0551-37dc-540d-a5ac-a4ccad84e691",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googlePalmApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.embedding_request }}",
+        "options": {
+          "timeout": 60000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "name": "Validate All Embeddings",
+      "id": "3cb6fc8a-7507-5108-97b4-65529813aaaf",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "// Shared trusted workflow helpers. No third-party modules or network access in Code nodes.\nfunction assert(condition, code) { if (!condition) throw new Error(code); }\nfunction fail(code) { throw new Error(code); }\nfunction first(name) { return $(name).first().json; }\nfunction one(json) { return [{json}]; }\nfunction normalize(text) { return text.replace(/\\r\\n?/g,'\\n'); }\nfunction words(text) { return text.split(/[\\u0009-\\u000d\\u001c-\\u0020\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]+/u).filter(Boolean).length; }\nfunction indiaToday() {\n  const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(p=>[p.type,p.value]));\n  return `${p.year}-${p.month}-${p.day}`;\n}\nfunction isoDate(value) {\n  assert(typeof value==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(value),'invalid_date');\n  const d=new Date(value+'T00:00:00Z');\n  assert(Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===value,'invalid_date');\n  return value;\n}\nfunction failure(e) {\n  const known=/^(invalid_|missing_|blocked_|role_|source_|provider_|model_|usage_|critic_|letter_|mcp_|configuration_|verification_)[a-z0-9_]+$/;\n  const error_code=known.test(e?.message||'')?e.message:'workflow_stage_failed';\n  const http_status=error_code==='provider_throttled'?429:\n    /^(invalid_|blocked_|role_expired|role_not_found)/.test(error_code)?422:502;\n  return one({failed:true,http_status,body:{status:'failed',error_code,\n    message:'The coaching pipeline could not complete this request. No application was approved or saved.'}});\n}\nfunction mcpObject(value,depth=0) {\n  assert(depth<8,'mcp_invalid_envelope');\n  if (typeof value==='string') {\n    let parsed;try { parsed=JSON.parse(value); } catch { fail('mcp_invalid_json'); }\n    return mcpObject(parsed,depth+1);\n  }\n  assert(value&&typeof value==='object'&&!value.isError&&!value.error,'mcp_tool_failed');\n  if (Array.isArray(value)) { assert(value.length===1,'mcp_ambiguous_result');return mcpObject(value[0],depth+1); }\n  if (typeof value.ok==='boolean') return value;\n  if (value.type==='text'&&typeof value.text==='string') return mcpObject(value.text,depth+1);\n  if (value.structuredContent) return mcpObject(value.structuredContent,depth+1);\n  if (Array.isArray(value.content)) {\n    const text=value.content.filter(c=>c.type==='text');assert(text.length===1,'mcp_ambiguous_result');\n    return mcpObject(text[0].text,depth+1);\n  }\n  if (value.json) return mcpObject(value.json,depth+1);\n  if (value.response) return mcpObject(value.response,depth+1);\n  fail('mcp_invalid_envelope');\n}\nfunction httpBody(response) {\n  assert(response&&!response.error,'provider_connection_failed');\n  if (response.statusCode===429) fail('provider_throttled');\n  assert(response.statusCode===200,'provider_http_failed');\n  assert(response.body&&typeof response.body==='object','provider_invalid_body');\n  return response.body;\n}\nfunction generation(response,previous) {\n  const b=httpBody(response), c=b.candidates;\n  assert(Array.isArray(c)&&c.length===1&&c[0].finishReason==='STOP','model_incomplete_output');\n  const parts=c[0].content?.parts;\n  assert(Array.isArray(parts)&&parts.length>0&&!parts.some(p=>p.functionCall),'model_invalid_output');\n  const text=parts.filter(p=>typeof p.text==='string'&&!p.thought).map(p=>p.text).join('');\n  assert(text.length<=15000,'model_output_too_large');\n  let value;try { value=JSON.parse(text); } catch { fail('model_invalid_json'); }\n  assert(value&&typeof value==='object'&&!Array.isArray(value),'model_invalid_json');\n  const u=b.usageMetadata;\n  assert(u&&Number.isInteger(u.promptTokenCount)&&Number.isInteger(u.candidatesTokenCount)&&Number.isInteger(u.totalTokenCount),'missing_usage_metadata');\n  assert(u.promptTokenCount>=0&&u.candidatesTokenCount>=0&&u.totalTokenCount>=u.promptTokenCount+u.candidatesTokenCount,'usage_invalid_metadata');\n  const usage={input_tokens:previous.input_tokens+u.promptTokenCount,\n    output_tokens:previous.output_tokens+(u.totalTokenCount-u.promptTokenCount),\n    model:previous.model}; // Includes thought/tool tokens in total rather than silently undercounting.\n  assert(usage.input_tokens+usage.output_tokens<=12000,'usage_exceeds_budget');\n  return {value,usage};\n}\nfunction exactKeys(obj,keys,code='model_invalid_schema') {\n  assert(obj&&typeof obj==='object'&&!Array.isArray(obj)&&Object.keys(obj).sort().join('|')===[...keys].sort().join('|'),code);\n}\nfunction strings(value,max=6,size=500) {\n  assert(Array.isArray(value)&&value.length<=max&&value.every(v=>typeof v==='string'&&v.length<=size&&!/[\\u0000-\\u0008]/.test(v)),'model_invalid_schema');\n  return value;\n}\nfunction modelRequest(system,data,schema,maxOutputTokens) {\n  // Gemini 3.5 Flash-Lite uses default minimal thinking. Deprecated sampling/budget fields are omitted.\n  return {systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:JSON.stringify(data)}]}],\n    generationConfig:{maxOutputTokens,responseMimeType:'application/json',responseSchema:schema}};\n}\nfunction schemaObject(properties) {return {type:'OBJECT',properties,required:Object.keys(properties)};}\nconst textSchema={type:'STRING'}, listSchema={type:'ARRAY',items:textSchema};\nfunction cleanBody(body) {\n  assert(typeof body==='string','letter_invalid_body');body=normalize(body).trim();\n  assert(body.length>=100&&body.length<=3500&&words(body)<=210,'letter_invalid_length');\n  assert(!/```|\\*\\*|\\[(?:your|candidate|insert|name|company|role|date|address|email|phone)[^\\]]*\\]|<(?:EMAIL_ADDRESS|PHONE_NUMBER|NAME|PERSON)>/i.test(body),'letter_placeholders');\n  assert(!/^(?:dear|to the)\\b/i.test(body)&&!/^\\s*(?:sincerely|regards|yours truly|yours faithfully)\\b/im.test(body),'letter_body_only');\n  assert(!/[\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]/.test(body),'letter_invalid_characters');\n  return body;\n}\n\nfunction sha256(value) {\n  const bytes = [];\n  for (const char of value) {\n    let cp = char.codePointAt(0);\n    if (cp >= 0xd800 && cp <= 0xdfff) cp = 0xfffd;\n    if (cp < 0x80) bytes.push(cp);\n    else if (cp < 0x800) bytes.push(0xc0 | (cp >> 6), 0x80 | (cp & 63));\n    else if (cp < 0x10000) bytes.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));\n    else bytes.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));\n  }\n  const bits = bytes.length * 8;\n  bytes.push(0x80);\n  while (bytes.length % 64 !== 56) bytes.push(0);\n  for (let shift = 7; shift >= 0; shift--) bytes.push(Math.floor(bits / (2 ** (shift * 8))) & 255);\n  const k = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];\n  const h = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];\n  const rotr = (x, n) => (x >>> n) | (x << (32 - n));\n  for (let offset = 0; offset < bytes.length; offset += 64) {\n    const w = new Array(64);\n    for (let i = 0; i < 16; i++) w[i] = ((bytes[offset+i*4]<<24) | (bytes[offset+i*4+1]<<16) | (bytes[offset+i*4+2]<<8) | bytes[offset+i*4+3]) >>> 0;\n    for (let i = 16; i < 64; i++) {\n      const s0 = rotr(w[i-15],7) ^ rotr(w[i-15],18) ^ (w[i-15] >>> 3);\n      const s1 = rotr(w[i-2],17) ^ rotr(w[i-2],19) ^ (w[i-2] >>> 10);\n      w[i] = (w[i-16] + s0 + w[i-7] + s1) >>> 0;\n    }\n    let [a,b,c,d,e,f,g,hh] = h;\n    for (let i = 0; i < 64; i++) {\n      const s1 = rotr(e,6) ^ rotr(e,11) ^ rotr(e,25);\n      const t1 = (hh + s1 + ((e & f) ^ (~e & g)) + k[i] + w[i]) >>> 0;\n      const s0 = rotr(a,2) ^ rotr(a,13) ^ rotr(a,22);\n      const t2 = (s0 + ((a & b) ^ (a & c) ^ (b & c))) >>> 0;\n      hh=g; g=f; f=e; e=(d+t1)>>>0; d=c; c=b; b=a; a=(t1+t2)>>>0;\n    }\n    [a,b,c,d,e,f,g,hh].forEach((value, i) => { h[i] = (h[i] + value) >>> 0; });\n  }\n  return h.map(value => value.toString(16).padStart(8, '0')).join('');\n}\n\nconst response=httpBody($json),p=first('Prepare Role Embeddings').prepared;\nassert(Array.isArray(response.embeddings)&&response.embeddings.length===p.length,'provider_embedding_count');\nconst rows=p.map((r,i)=>{\n const v=response.embeddings[i].values;\n assert(Array.isArray(v)&&v.length===3072&&v.every(Number.isFinite)&&v.some(n=>n!==0),'provider_invalid_embedding');\n return {...r,embedding:JSON.stringify(v)};\n});return one({rows});\n"
+      },
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "name": "Atomically Replace Role Index",
+      "id": "61357e7f-e1e3-509a-8efe-1095271b31c4",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- A single SQL statement is one atomic transaction. All parameters are bound, never interpolated.\nWITH incoming AS MATERIALIZED (\n  SELECT * FROM jsonb_to_recordset($1::jsonb) AS x(text text,metadata jsonb,embedding text)\n), locked AS MATERIALIZED (\n  SELECT pg_advisory_xact_lock(hashtextextended('firstrole-final-knowledge-index',0))\n), valid AS MATERIALIZED (\n  SELECT i.* FROM incoming i CROSS JOIN locked\n  JOIN public.internship_roles r ON r.role_id=i.metadata->>'role_id'\n  JOIN public.companies c ON c.company_id=r.company_id\n  JOIN public.role_documents d ON d.document_key=i.metadata->>'document_key'\n    AND d.source_version=(i.metadata->>'source_version')::integer AND d.company_id=r.company_id\n  WHERE r.active AND c.active AND d.index_status<>'retired'\n    AND c.name=i.metadata->>'company'\n    AND r.catalog_version=(i.metadata->>'catalog_version')::integer\n    AND d.source_version=r.catalog_version\n    AND d.content_sha256=i.metadata->>'source_sha256'\n    AND encode(sha256(convert_to(to_jsonb(r)::text,'UTF8')),'hex')=i.metadata->>'role_sha256'\n), complete AS MATERIALIZED (\n  SELECT count(*)>0 AND count(*)=(SELECT count(*) FROM incoming)\n    AND count(*)=(SELECT count(DISTINCT metadata->>'role_id') FROM incoming)\n    AND count(*)=(SELECT count(*) FROM public.internship_roles r JOIN public.companies c USING(company_id)\n      WHERE r.active AND c.active) AS ok FROM valid\n), removed AS (\n  DELETE FROM public.internship_role_chunks old USING valid v,complete\n  WHERE complete.ok AND old.metadata->>'dataset'='internship_roles'\n    AND old.role_id=v.metadata->>'role_id' RETURNING old.id\n), inserted AS (\n  INSERT INTO public.internship_role_chunks(text,metadata,embedding)\n  SELECT v.text,v.metadata,v.embedding::extensions.vector(3072) FROM valid v,complete,\n    (SELECT count(*) FROM removed) barrier WHERE complete.ok RETURNING metadata\n), marked AS (\n  UPDATE public.role_documents d SET index_status='ready',embedding_model='models/gemini-embedding-001',embedding_dimensions=3072\n  WHERE EXISTS(SELECT 1 FROM inserted i WHERE i.metadata->>'document_key'=d.document_key\n     AND (i.metadata->>'source_version')::integer=d.source_version) RETURNING d.document_key\n)\nSELECT count(*) AS chunks_written,count(DISTINCT metadata->>'role_id') AS roles_indexed,\n       (SELECT count(*) FROM incoming) AS expected_roles FROM inserted;\n",
+        "options": {
+          "connectionTimeout": 15,
+          "queryReplacement": "={{ [JSON.stringify($json.rows)] }}"
+        }
+      },
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "name": "Indexing Summary",
+      "id": "aa4c0da5-a246-59ed-9429-9fcd6ff187d4",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "if(Number($json.chunks_written)!==Number($json.expected_roles)||!Number($json.expected_roles))throw new Error('Sources changed or indexing was incomplete. Previous index was preserved.');return [{json:{ok:true,roles_indexed:Number($json.roles_indexed),chunks_written:Number($json.chunks_written),embedding_model:'models/gemini-embedding-001',dimensions:3072}}];"
+      },
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "name": "Loader Setup",
+      "id": "bb5b150f-4ca4-5e81-8019-5eb7c3a1fac6",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "parameters": {
+        "content": "## Manual administrator operation\nSelect an existing knowledge-writer Postgres credential in both SQL nodes and your saved Google Gemini(PaLM) Api credential in the embedding request. Execute this workflow once before search. It indexes the database sources, never resumes. A complete replacement is committed atomically; a failed embedding leaves the old index in place.",
+        "width": 500,
+        "height": 250,
+        "color": 5
+      },
+      "position": [
+        120,
+        -340
+      ]
+    }
+  ],
+  "connections": {
+    "Load Knowledge Manually": {
+      "main": [
+        [
+          {
+            "node": "Read Versioned Role Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Versioned Role Sources": {
+      "main": [
+        [
+          {
+            "node": "Prepare Role Embeddings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Role Embeddings": {
+      "main": [
+        [
+          {
+            "node": "Embed All Role Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed All Role Documents": {
+      "main": [
+        [
+          {
+            "node": "Validate All Embeddings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate All Embeddings": {
+      "main": [
+        [
+          {
+            "node": "Atomically Replace Role Index",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atomically Replace Role Index": {
+      "main": [
+        [
+          {
+            "node": "Indexing Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "tags": [],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kolkata",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false
+  }
+}

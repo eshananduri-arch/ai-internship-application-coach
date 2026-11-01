@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     database_url: SecretStr = SecretStr('')
     worker_database_url: SecretStr = SecretStr('')
     operator_database_url: SecretStr = SecretStr('')
+    db_sslrootcert: Path | None = None
     session_signing_key: SecretStr = SecretStr('')
     resume_encryption_key: SecretStr = SecretStr('')
     encryption_key_version: str = 'v1'
@@ -30,6 +31,13 @@ class Settings(BaseSettings):
 
     @model_validator(mode='after')
     def validate_secrets(self):
+        if self.db_sslrootcert is not None:
+            certificate = self.db_sslrootcert.expanduser()
+            if not certificate.is_absolute():
+                certificate = ROOT / certificate
+            if not certificate.is_file():
+                raise ValueError('DB_SSLROOTCERT must point to an existing CA certificate file')
+            self.db_sslrootcert = certificate.resolve()
         if self.session_signing_key.get_secret_value() and len(self.session_signing_key.get_secret_value()) < 32:
             raise ValueError('SESSION_SIGNING_KEY must have at least 32 random characters')
         if self.n8n_webhook_url:

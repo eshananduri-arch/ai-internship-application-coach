@@ -2,7 +2,7 @@
 
 Firstrole helps a visitor upload a resume, select an internship, review a tailored cover letter, and approve the exact version to download.
 
-**Version 1.0.0 is a development checkpoint.** It contains the frontend, Python backend, Supabase migrations, draft MCP tools and all project progress notes. The live database connection and n8n integration are still pending; this is not a production-ready AI release. See [checkpoint status and next steps](docs/VERSION_1.md) and [the changelog](CHANGELOG.md).
+**The original v1.0.0 tag is a development checkpoint.** Current main adds verified Supabase connections and six final n8n workflow templates. Local live generation and approval/download integration has been exercised; deployment is still pending. See [current integration status](docs/INTEGRATION_STATUS.md), [the original checkpoint](docs/VERSION_1.md) and [the changelog](CHANGELOG.md).
 
 ## Project structure
 
@@ -12,7 +12,7 @@ Firstrole helps a visitor upload a resume, select an internship, review a tailor
 | [`backend/`](backend/) | FastAPI routes, private sessions, encrypted uploads, durable worker and exports |
 | [`supabase/`](supabase/) | Eight applied database migrations, CLI configuration, project reference and SQL tests |
 | [`role_documents/`](role_documents/) | Five fictional educational role-source documents |
-| [`workflows/`](workflows/) | Draft n8n MCP workflow and deterministic tools; live setup remains pending |
+| [`workflows/`](workflows/) | Original draft plus [final import package and manual setup](workflows/final/README.md); credentials are configured separately from source |
 | [`docs/`](docs/) | Project guide, deployment decisions, worker-management plan and version checkpoint |
 
 ## Frontend version 1
@@ -26,7 +26,7 @@ npm run dev
 
 Open http://127.0.0.1:5173/. Running the static frontend needs Node.js but no dependency installation. See the [frontend README](frontend/README.md) for tests, the API contract and integration details.
 
-**Current status:** frontend version 1 is available. Supabase database version 1 is provisioned in Mumbai, with migrations and checks in [`supabase/`](supabase/). The local Python backend is implemented in [`backend/`](backend/), including the API, durable queue consumer, dynamically managed threads and approval/download routes. It runs locally, with 27 Python tests and 49 live SQL checks passed. Runtime database credentials and the n8n webhook are still unconfigured, so end-to-end generation and the two database-backed HTTP tests remain pending. The role catalog is fictional development data; no sample letter substitutes for real generation.
+**Current status:** the local FastAPI API and durable worker connect to Supabase Mumbai using separate restricted database logins with verified TLS. The worker calls the published authenticated n8n Orchestrator, which uses Gemini 3.5 Flash-Lite and real MCP search/date/word-count tools. The Microsoft DOCX flow passed real upload, generation, approval and exact TXT/DOCX/PDF downloads. Backend tests: 32 passed; frontend mocked-API checks: 46 passed. Read the integration report for the unresolved PDF queue test and validation limits. The catalog remains fictional educational data. Cloudflare/Render deployment and a public launch have not happened.
 
 ## Planned stack
 

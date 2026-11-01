@@ -1,0 +1,177 @@
+{
+  "name": "Final MCP",
+  "nodes": [
+    {
+      "name": "Career MCP Server",
+      "id": "bb088035-02b9-56cb-933d-193ad30a2ec2",
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "parameters": {
+        "path": "final-career-tools",
+        "authentication": "headerAuth"
+      },
+      "position": [
+        500,
+        0
+      ],
+      "webhookId": "7b240bdc-c666-5080-916b-15e9df335267"
+    },
+    {
+      "name": "search_internship_roles",
+      "id": "bd75986d-7ba1-5ab4-b13d-5c86fe7ca2aa",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "parameters": {
+        "name": "search_internship_roles",
+        "description": "Search authoritative internship documents using real vector similarity. Requires exact role_id and catalog_version from the request plus a concise input query. Returns ok:false when no indexed source exists. Never substitute another role.",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "REPLACE_WITH_FINAL_ROLE_SEARCH_ID"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "input": "={{ $fromAI('input','Concise query for the selected role only','string') }}",
+            "role_id": "={{ $fromAI('role_id','Exact selected role ID','string') }}",
+            "catalog_version": "={{ $fromAI('catalog_version','Exact catalog version, normally 1','number') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "input",
+              "displayName": "input",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "role_id",
+              "displayName": "role_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "catalog_version",
+              "displayName": "catalog_version",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "description": "Calculate exact calendar days from today in Asia/Kolkata until an internship deadline. Call with input containing one real ISO date, for example 2026-12-15. Negative days mean expired. Does not infer closing hours or modify data.",
+        "language": "javaScript",
+        "jsCode": "// n8n Code Tool body. Input schema is { input: \"YYYY-MM-DD\" }.\nconst input = typeof query === 'string' ? query : query?.input;\nconst error = (code, message) => JSON.stringify({ ok: false, error: code, message });\nif (typeof input !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(input.trim())) {\n  return error('INVALID_DATE', 'Send one real calendar date as input, for example 2026-12-15.');\n}\nconst date = input.trim();\nconst [year, month, day] = date.split('-').map(Number);\nif (year < 1000 || year > 9999) return error('INVALID_DATE', 'Use a year between 1000 and 9999.');\nconst deadline = Date.UTC(year, month - 1, day);\nconst checked = new Date(deadline);\nif (checked.getUTCFullYear() !== year || checked.getUTCMonth() !== month - 1 || checked.getUTCDate() !== day) {\n  return error('INVALID_DATE', 'This calendar date does not exist. Send YYYY-MM-DD.');\n}\nconst timezone = 'Asia/Kolkata';\nconst parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {\n  timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',\n}).formatToParts(new Date()).map(part => [part.type, part.value]));\nconst today = `${parts.year}-${parts.month}-${parts.day}`;\nconst current = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day));\nconst remaining = Math.round((deadline - current) / 86400000);\nreturn JSON.stringify({\n  ok: true, deadline: date, today, timezone, days_remaining: remaining,\n  expired: remaining < 0, deadline_is_today: remaining === 0,\n  rule: 'Calendar-day difference in Asia/Kolkata; the closing hour is not inferred.',\n});\n",
+        "specifyInputSchema": true,
+        "schemaType": "manual",
+        "inputSchema": "{\"type\":\"object\",\"properties\":{\"input\":{\"type\":\"string\",\"description\":\"One deadline in YYYY-MM-DD format.\",\"maxLength\":10}},\"required\":[\"input\"],\"additionalProperties\":false}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.2,
+      "position": [
+        500,
+        300
+      ],
+      "id": "88028405-6440-5645-9ec6-75f0d2f78ee9",
+      "name": "days_until"
+    },
+    {
+      "parameters": {
+        "description": "Count words in the EXACT final plain-text cover letter, including greeting and signature, and return its SHA-256 digest. Call with the complete letter in input, not a summary or a previous draft. Uses whitespace_v1 and a 250-word limit. Recount after any edits. Does not save or approve the letter.",
+        "language": "javaScript",
+        "jsCode": "// n8n Code Tool body. No external modules are needed in the tool sandbox.\nconst input = typeof query === 'string' ? query : query?.input;\nif (typeof input !== 'string') return JSON.stringify({ ok: false, error: 'INVALID_INPUT', message: 'Send the exact plain-text letter in the input field.' });\nif (input.length > 20000) return JSON.stringify({ ok: false, error: 'TOO_LONG', message: 'Send at most 20000 characters.' });\n// The API, editor and exports also normalize CRLF/CR line endings to LF.\nconst text = input.replace(/\\r\\n?/g, '\\n');\nconst count = text.split(/[\\u0009-\\u000d\\u001c-\\u0020\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]+/u).filter(Boolean).length;\n\n// SHA-256 over UTF-8, including replacement of lone surrogates, without require().\nfunction sha256(value) {\n  const bytes = [];\n  for (const char of value) {\n    let cp = char.codePointAt(0);\n    if (cp >= 0xd800 && cp <= 0xdfff) cp = 0xfffd;\n    if (cp < 0x80) bytes.push(cp);\n    else if (cp < 0x800) bytes.push(0xc0 | (cp >> 6), 0x80 | (cp & 63));\n    else if (cp < 0x10000) bytes.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));\n    else bytes.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));\n  }\n  const bits = bytes.length * 8;\n  bytes.push(0x80);\n  while (bytes.length % 64 !== 56) bytes.push(0);\n  for (let shift = 7; shift >= 0; shift--) bytes.push(Math.floor(bits / (2 ** (shift * 8))) & 255);\n  const k = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];\n  const h = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];\n  const rotr = (x, n) => (x >>> n) | (x << (32 - n));\n  for (let offset = 0; offset < bytes.length; offset += 64) {\n    const w = new Array(64);\n    for (let i = 0; i < 16; i++) w[i] = ((bytes[offset+i*4]<<24) | (bytes[offset+i*4+1]<<16) | (bytes[offset+i*4+2]<<8) | bytes[offset+i*4+3]) >>> 0;\n    for (let i = 16; i < 64; i++) {\n      const s0 = rotr(w[i-15],7) ^ rotr(w[i-15],18) ^ (w[i-15] >>> 3);\n      const s1 = rotr(w[i-2],17) ^ rotr(w[i-2],19) ^ (w[i-2] >>> 10);\n      w[i] = (w[i-16] + s0 + w[i-7] + s1) >>> 0;\n    }\n    let [a,b,c,d,e,f,g,hh] = h;\n    for (let i = 0; i < 64; i++) {\n      const s1 = rotr(e,6) ^ rotr(e,11) ^ rotr(e,25);\n      const t1 = (hh + s1 + ((e & f) ^ (~e & g)) + k[i] + w[i]) >>> 0;\n      const s0 = rotr(a,2) ^ rotr(a,13) ^ rotr(a,22);\n      const t2 = (s0 + ((a & b) ^ (a & c) ^ (b & c))) >>> 0;\n      hh=g; g=f; f=e; e=(d+t1)>>>0; d=c; c=b; b=a; a=(t1+t2)>>>0;\n    }\n    [a,b,c,d,e,f,g,hh].forEach((value, i) => { h[i] = (h[i] + value) >>> 0; });\n  }\n  return h.map(value => value.toString(16).padStart(8, '0')).join('');\n}\nreturn JSON.stringify({\n  ok: true, word_count: count, maximum_words: 250,\n  within_limit: count <= 250, nonempty: count > 0,\n  rule: 'whitespace_v1', normalization: 'CRLF and CR to LF; no other rewriting',\n  text_sha256: sha256(text),\n});\n",
+        "specifyInputSchema": true,
+        "schemaType": "manual",
+        "inputSchema": "{\"type\":\"object\",\"properties\":{\"input\":{\"type\":\"string\",\"description\":\"The exact plain-text letter with actual line breaks.\",\"maxLength\":20000}},\"required\":[\"input\"],\"additionalProperties\":false}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        300
+      ],
+      "id": "aaf4cd3b-7708-5150-b94c-a721535b0568",
+      "name": "word_count"
+    },
+    {
+      "name": "MCP Setup",
+      "id": "b710c9f3-d644-5edc-ba2c-e4ba1eeee982",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "parameters": {
+        "content": "## Publish after connecting the helper\n1. Choose Final Role Search in search_internship_roles. Preserve the three input expressions.\n2. Select Header Auth: X-Internship-MCP-Key with a strong random secret.\n3. Publish and copy the actual Production MCP URL.\n4. Paste it into Workflow Settings in Final Orchestrator and Verification Settings in Final Verification. Use the same MCP credential on all their MCP Client nodes.",
+        "width": 500,
+        "height": 250,
+        "color": 5
+      },
+      "position": [
+        -350,
+        -80
+      ]
+    }
+  ],
+  "connections": {
+    "search_internship_roles": {
+      "ai_tool": [
+        [
+          {
+            "node": "Career MCP Server",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "days_until": {
+      "ai_tool": [
+        [
+          {
+            "node": "Career MCP Server",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "word_count": {
+      "ai_tool": [
+        [
+          {
+            "node": "Career MCP Server",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "tags": [],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kolkata",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false
+  }
+}

@@ -40,8 +40,8 @@ class Controls(BaseModel):
 
 def create_app(settings=None):
     settings=settings or get_settings()
-    database=Database(settings.database_url.get_secret_value(),settings.db_pool_max,'firstrole-api')
-    operator=Database(settings.operator_database_url.get_secret_value(),2,'firstrole-operator')
+    database=Database(settings.database_url.get_secret_value(),settings.db_pool_max,'firstrole-api',sslrootcert=settings.db_sslrootcert)
+    operator=Database(settings.operator_database_url.get_secret_value(),2,'firstrole-operator',sslrootcert=settings.db_sslrootcert)
     sessions=Sessions(database,settings)
     repo=Repository(database,Encryption(settings),settings)
     @asynccontextmanager

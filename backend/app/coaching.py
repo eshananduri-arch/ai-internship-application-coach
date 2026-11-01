@@ -65,6 +65,25 @@ class Coach:
                         except ValueError: delay=30
                         raise PipelineError('provider_throttled',retryable=True,retry_after=delay)
                     if response.status_code>=500:
+                        # Keep only known error codes, never provider messages, resumes or letters.
+                        error_body=bytearray()
+                        for chunk in response.iter_bytes():
+                            error_body.extend(chunk)
+                            if len(error_body)>16384:
+                                break
+                        safe_codes={'model_incomplete_output','model_invalid_json','model_invalid_schema',
+                            'model_unsupported_evidence','model_invalid_match','critic_requires_changes',
+                            'letter_invalid_length','letter_missing_role','letter_placeholders',
+                            'mcp_tool_failed','mcp_invalid_json','mcp_invalid_envelope',
+                            'role_not_found','role_expired','usage_exceeds_budget','provider_http_failed',
+                            'provider_connection_failed','missing_usage_metadata'}
+                        try:
+                            error=json.loads(error_body) if len(error_body)<=16384 else {}
+                            code=error.get('error_code') if isinstance(error,dict) and error.get('status')=='failed' else None
+                        except (ValueError,UnicodeDecodeError):
+                            code=None
+                        if code in safe_codes:
+                            raise PipelineError(code,uncertain=True)
                         raise PipelineError('coaching_unavailable',retryable=self.settings.n8n_idempotent,uncertain=True)
                     if response.status_code!=200:
                         raise PipelineError('coaching_http_error')

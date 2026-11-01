@@ -1,0 +1,90 @@
+{
+  "name": "Final Error Monitor",
+  "nodes": [
+    {
+      "name": "Automatic Workflow Error",
+      "id": "26abef50-f2b4-5089-979e-dfeb30ee619e",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "parameters": {},
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Keep Safe Error Metadata",
+      "id": "20cb37d8-568c-591e-9daa-c09b9c424a4c",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "// Do not persist raw errors, stack traces, payloads, model responses or URLs with query parameters.\nconst e=$json.execution||{},w=$json.workflow||{};\nconst safeId=v=>String(v||'').replace(/[^a-zA-Z0-9_.:-]/g,'').slice(0,100);\nconst record={recorded_at:new Date().toISOString(),category:'automatic_execution_failed',\n workflow_id:safeId(w.id),execution_id:safeId(e.id),retry_of:safeId(e.retryOf),\n mode:safeId(e.mode),last_node:safeId(e.lastNodeExecuted)};\nconsole.log('firstrole_operational_error',JSON.stringify(record));\nreturn [{json:record}];\n"
+      },
+      "position": [
+        250,
+        0
+      ]
+    },
+    {
+      "name": "Safe Error Output",
+      "id": "608aa2a2-5d0a-514a-811d-24edda00cb1b",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "parameters": {},
+      "position": [
+        500,
+        0
+      ]
+    },
+    {
+      "name": "Monitor Setup",
+      "id": "a93b1233-5faf-589e-9d87-695800871441",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "parameters": {
+        "content": "## Configure separately in each workflow Settings\nSelect Final Error Monitor as the error workflow for Final Orchestrator, Final Role Search and Final Knowledge Loader. It emits safe metadata to runtime logs where available. Execution saving stays disabled because the trigger receives a raw error before redaction. Python records job failures durably. No notifications or database writes.",
+        "width": 500,
+        "height": 250,
+        "color": 5
+      },
+      "position": [
+        0,
+        -300
+      ]
+    }
+  ],
+  "connections": {
+    "Automatic Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Keep Safe Error Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Safe Error Metadata": {
+      "main": [
+        [
+          {
+            "node": "Safe Error Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "tags": [],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kolkata",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false
+  }
+}

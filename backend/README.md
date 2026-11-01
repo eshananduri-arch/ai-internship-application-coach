@@ -1,16 +1,16 @@
 # Firstrole backend version 1
 
-Python FastAPI API plus a separately running durable worker, included in the repository's version 1.0.0 development checkpoint. Runtime integration is pending; the backend has not been deployed to Render.
+Python FastAPI API plus a separately running durable worker, included in the repository's version 1.0.0 development checkpoint. The local backend connects to Supabase and the published n8n Orchestrator. Hosting on Render is still pending. See [current integration results](../docs/INTEGRATION_STATUS.md).
 
 ## Current verification and connection status
 
 - The API runs locally at **http://127.0.0.1:8010** and serves the existing frontend from the same origin.
-- **27 Python tests pass**. Two real-database HTTP integration tests are opt-in and currently skipped because no runtime database credential is configured.
+- **32 Python tests pass**, including the two opt-in real-database HTTP tests for approval, rejection, downloads and cross-visitor isolation.
 - **49 live Supabase SQL checks pass**: the 34 database baseline checks plus 15 queue/runtime checks. These test the database through the administrative connector, not through this Python API.
 - DOCX and PDF synthetic exports were rendered and visually inspected. Body paragraphs are justified; the greeting and signature are left aligned. TXT preserves the exact approved text.
 - All **46 frontend checks** pass with mocked API responses. A local secret scan found no generated session, encryption or administrator secret in Git-visible files.
-- The proposed runtime database logins were not created. The user declined that access change. `DATABASE_URL`, `WORKER_DATABASE_URL` and `OPERATOR_DATABASE_URL` remain empty in the ignored local `.env` file.
-- n8n is not connected yet. There is no synthetic generation fallback. Until credentials and n8n are configured, readiness is HTTP 503 and generation cannot run end to end.
+- Following user approval on 1 November 2026, separate API, worker and operator logins were created with their existing restricted permission groups. The three connection strings are configured only in the ignored local `.env` file. No administrator or RLS-bypass account is used by the app.
+- The production n8n webhook is connected and readiness is HTTP 200 locally. A live Microsoft DOCX upload completed generation, approval and exact TXT/DOCX/PDF downloads. Broader runtime results and the remaining PDF test issue are recorded in the integration report. There is no synthetic generation fallback.
 
 ## Start locally
 
@@ -37,7 +37,7 @@ In another terminal, after configuring suitable existing worker/operator credent
 
 Copy settings from `.env.example`; keep actual values in the ignored `.env` file. Never commit or paste secrets into chat. Existing Supabase session-pooler host: `aws-0-ap-south-1.pooler.supabase.com`, port `5432`, database `postgres`. Pooler usernames use `<actual_login>.eztcigkqrhuyeyfgpaor`. The supplied `postgres` connection is an administrator connection; the API intentionally rejects administrator/RLS-bypass roles during readiness checks.
 
-Use existing credentials with the permission groups defined in `../supabase/README.md`: `internship_api`, `internship_worker` and `internship_operator`. These groups are NOLOGIN roles, not standalone credentials. This implementation does not automatically provision login accounts. Database TLS verifies both the certificate chain and hostname using the pinned certifi CA bundle; a private/self-signed endpoint needs an intentionally configured provider root certificate.
+Use existing credentials with the permission groups defined in `../supabase/README.md`: `internship_api`, `internship_worker` and `internship_operator`. These groups are NOLOGIN roles, not standalone credentials. This implementation does not automatically provision login accounts. Database TLS verifies both the certificate chain and hostname. Set `DB_SSLROOTCERT=certs/supabase-root-2021.crt` for the Supabase pooler; relative paths resolve from backend/. All four API/worker/operator pools use this public CA. When unset, the certifi trust bundle is used. Missing configured certificate files fail validation before connection.
 
 Set `N8N_WEBHOOK_URL` to the authenticated production webhook and `N8N_WEBHOOK_TOKEN` to its server-only bearer secret. Plain HTTP is allowed only for localhost in development. Redirects are not followed. Set `N8N_IDEMPOTENT=true` only after the actual workflow implements request deduplication; otherwise uncertain timeouts are not automatically retried.
 
@@ -77,7 +77,7 @@ These endpoints require `Authorization: Bearer <ADMIN_TOKEN>` and the separate o
 
 ## n8n response contract
 
-See [`N8N_CONTRACT.md`](N8N_CONTRACT.md). The adapter rejects mismatched IDs, incomplete JSON, unverified selected-role evidence, a word count that does not match the exact returned letter, placeholders, missing usage and a critic that has not approved the result. Runtime tool evidence must be constructed from actual node outputs in the trusted workflow, never copied from a model's self-report. The real n8n adapter is not yet tested against a published workflow, so the previous MCP edge cases must be retested there.
+See [`N8N_CONTRACT.md`](N8N_CONTRACT.md). The adapter rejects mismatched IDs, incomplete JSON, unverified selected-role evidence, a word count that does not match the exact returned letter, placeholders, missing usage and a critic that has not approved the result. Runtime tool evidence must be constructed from actual node outputs in the trusted workflow, never copied from a model's self-report. The real adapter has been tested against the published Orchestrator. See the integration report for which paths passed and which remain unresolved. It preserves allowlisted pipeline failure codes without retaining provider messages or private response payloads.
 
 ## Tests
 
@@ -86,7 +86,7 @@ See [`N8N_CONTRACT.md`](N8N_CONTRACT.md). The adapter rejects mismatched IDs, in
 .venv/Scripts/python.exe -m pip check
 ```
 
-The default Python suite uses synthetic local documents and a mocked HTTP transport for contract testing. Those responses are test-only; the running application cannot use them. Real PostgreSQL HTTP tests are explicitly opt-in:
+The default Python suite uses synthetic local documents and a mocked HTTP transport for contract testing. `scripts/check_connections.py` verifies the actual configured API, worker and operator logins without printing passwords or private records. Those responses are test-only; the running application cannot use them. Real PostgreSQL HTTP tests are explicitly opt-in:
 
 ```powershell
 $env:FIRSTROLE_INTEGRATION='1'

@@ -1,6 +1,6 @@
 # Server-to-server coaching contract
 
-Python sends one authenticated POST to a configured, published production webhook. This is a future n8n integration target, not a working workflow export. Use `Authorization: Bearer <server-secret>`, TLS and a fixed URL supplied by server configuration. Do not accept webhook URLs from the browser.
+Python sends one authenticated POST to a configured, published production webhook. Importable workflows implementing this contract are now available in `workflows/final/`; they still need credentials, URLs, publishing and live integration tests. Use `Authorization: Bearer <server-secret>`, TLS and a fixed URL supplied by server configuration. Do not accept webhook URLs from the browser.
 
 Request fields:
 

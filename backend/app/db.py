@@ -5,14 +5,14 @@ import certifi
 from .errors import AppError
 
 class Database:
-    def __init__(self, url: str, max_size=6, name='firstrole'):
+    def __init__(self, url: str, max_size=6, name='firstrole', sslrootcert=None):
         self.pool = None
         if url:
             self.pool = ConnectionPool(url, min_size=0, max_size=max_size, max_idle=30,
                 timeout=8, max_waiting=24, open=False, name=name,
                 kwargs={'row_factory': dict_row, 'connect_timeout': 6,
                         'prepare_threshold': None, 'application_name': name,
-                        'sslmode': 'verify-full', 'sslrootcert': certifi.where()})
+                        'sslmode': 'verify-full', 'sslrootcert': str(sslrootcert) if sslrootcert else certifi.where()})
 
     def open(self):
         if self.pool:

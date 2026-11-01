@@ -1,5 +1,15 @@
 # Changelog
 
+## Integration update — 1 November 2026
+
+- Connect local API, queue worker and operator services to Supabase with separate restricted logins; secrets remain outside Git.
+- Add the public Supabase CA and configurable verified TLS for all four connection pools, plus a connection-check script.
+- Connect the authenticated published n8n webhook; preserve safe pipeline failure codes without logging private provider payloads.
+- Add six portable final workflow imports, an import ZIP, setup instructions, and Code/parser checks. Generation uses Gemini 3.5 Flash-Lite with bounded model calls and explicit MCP evidence.
+- Add a reproducible frontend test lockfile and current integration/verification notes.
+
+Validation: 32 backend tests (including live PostgreSQL isolation/decision tests), 46 frontend mocked-API checks, six workflow structures, 26 Code scripts and 12 MCP envelope cases pass. The live Microsoft DOCX approval/download journey passed; broader end-to-end results and the PDF queue issue are documented in docs/INTEGRATION_STATUS.md. Original v1.0.0 remains unchanged. No hosting deployment is included.
+
 ## Version 1.0.0 â€” 31 October 2026
 
 Development checkpoint covering the frontend, backend, Supabase database definition, source documents, tests and draft MCP tools. This checkpoint is not a production deployment or an end-to-end working AI release.

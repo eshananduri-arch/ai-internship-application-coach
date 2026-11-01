@@ -6,9 +6,9 @@ Project: `internship-coach-dev`, reference `eztcigkqrhuyeyfgpaor`.
 
 This database definition is included in version 1.0.0. [`project.json`](project.json) identifies the hosted development project; [`REPOSITORY_LINK.md`](REPOSITORY_LINK.md) distinguishes source versioning from the pending authenticated CLI/dashboard GitHub link. GitHub repository access does not grant database access. No automatic deployment is enabled.
 
-Eight migrations have been applied and their local filenames match the live migration versions. Treat this directory as the single schema history. Do not manage these same tables with a separate Alembic history or reapply the older `workflows/mcp/prepare_knowledge_database.sql` bootstrap. New changes require a new migration.
+Eight versioned application-schema migrations are included here. Hosted history additionally contains environment-specific login provisioning operations; their password hashes and secret values are deliberately excluded from source. Do not configure unattended migration deployment without reconciling that environment-specific history. Treat this directory as the single schema history. Do not manage these same tables with a separate Alembic history or reapply the older `workflows/mcp/prepare_knowledge_database.sql` bootstrap. New changes require a new migration.
 
-**Backend update:** an eighth migration, `backend_runtime_management`, adds persistent rate limits, token reservations, usage settlement, retry/reconciliation helpers and operations aggregates. Python implementation is now in `../backend/`. Runtime logins were not created after the user declined that access change, so the local API is not connected to this database. The additional live SQL suite passed 15 checks, alongside the 34 baseline checks.
+**Backend update:** an eighth migration, `backend_runtime_management`, adds persistent rate limits, token reservations, usage settlement, retry/reconciliation helpers and operations aggregates. Python implementation is now in `../backend/`. The user approved runtime logins on 1 November 2026; the local API, worker and operator are now connected with separate restricted accounts. The additional live SQL suite passed 15 checks, alongside the 34 baseline checks.
 
 ## What exists
 
@@ -25,7 +25,7 @@ Eight migrations have been applied and their local filenames match the live migr
 | Worker management | `worker_settings`, `worker_slots`, `worker_heartbeats` | Global capacity controls, lease tokens, pause/drain foundations |
 | Operations | `operational_events`, `model_usage` | Event codes and token counts, without resume/letter payload columns |
 
-The database contains **no real resumes, visitor records, approved applications or queued jobs**. Source documents have `index_status='pending'`; there are **zero embedded chunks**. Actual embeddings must be generated in the later n8n indexing phase. An empty vector table is not a working RAG search.
+The role knowledge index has been built by the live Knowledge Loader and used successfully through MCP. Synthetic integration visitors and private records are removed after checks. Real private resumes and approved letters are never versioned in this repository. See the current integration report for runtime status.
 
 ## Access boundaries
 
@@ -59,7 +59,7 @@ The database cannot prove a human clicked a button; the authenticated API must s
 
 The default global target is **1** job with a configured maximum of **2**, shared across all worker processes. Sixteen physical slot rows provide an upper schema limit for future approved configuration. A locked singleton settings row serializes claims. Reducing a target drains existing work; it does not terminate it. Pause blocks new claims. Expired leases can be reclaimed with a fresh token; stale tokens cannot complete or heartbeat the replacement lease. Queue visibility is extended with a claim/heartbeat.
 
-This is database infrastructure, **not a running autoscaler**. Python still needs the dispatcher, worker loop, retry/backoff classification, exhausted-job handling, controller, safe operational endpoints, usage-budget enforcement and deployment wakeup strategy. A controller must archive/terminalize exhausted or cancelled messages. Monitor idempotent redelivery and at-least-once processing; do not claim exactly-once model calls. Initial job maximum attempts is 3, bounded to 5.
+The Python worker now runs locally with the dispatcher, lease heartbeats, retry/backoff classification, exhausted-job handling, controller, operational endpoints and usage-budget enforcement. Hosting-level instance scaling and a deployment wakeup strategy remain future work. A controller must archive/terminalize exhausted or cancelled messages. Monitor idempotent redelivery and at-least-once processing; do not claim exactly-once model calls. Initial job maximum attempts is 3, bounded to 5.
 
 Reducing concurrency does not by itself reduce a fixed Render service bill. Actual machine scaling, provider quotas and costs must be configured during deployment. There is no sub-10-second latency guarantee from these database changes.
 
@@ -75,6 +75,6 @@ Current schema inventory, migration versions and test results are recorded in `v
 
 ## Remaining integration
 
-Next is Python FastAPI and the worker/controller, then n8n role indexing and coaching. The existing frontend has not been connected to this database. Configure production backups/restore testing, retention, file encryption, rate limits and provider secrets before production use. No automatic deletion policy has been activated for approved applications. Anonymous visitors may lose access if they clear their cookie or it expires; a recovery flow would require a separate product decision.
+The local Python backend and published n8n workflows are connected. The frontend can use them through the same-origin API at http://127.0.0.1:8010/. See `../docs/INTEGRATION_STATUS.md` for exact tested paths and limitations. Configure production backups/restore testing, retention, file encryption, rate limits and provider secrets before production use. No automatic deletion policy has been activated for approved applications. Anonymous visitors may lose access if they clear their cookie or it expires; a recovery flow would require a separate product decision.
 
 To inspect private tables in the Supabase dashboard Table Editor, select the **app** schema. Shared catalog tables are under **public**. Dashboard access is administrative and must not be confused with the app's visitor access.

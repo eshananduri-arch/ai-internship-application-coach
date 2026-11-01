@@ -152,3 +152,15 @@ def test_chunked_body_limit(settings):
     with TestClient(create_app(settings)) as client:
         r=client.post('/api/analyses/'+str(uuid4())+'/decision',content=iter([b'x'*1024]*6000),headers={'Content-Type':'application/json'})
         assert r.status_code==413
+
+
+@pytest.mark.parametrize('code,expected', [('model_unsupported_evidence','model_unsupported_evidence'),('untrusted_provider_message','coaching_unavailable')])
+def test_remote_failures_keep_only_known_codes(settings,code,expected):
+    coach=Coach(settings,httpx.MockTransport(lambda _:httpx.Response(502,json={'status':'failed','error_code':code,'message':'Private provider payload must not become a diagnostic.'})))
+    with pytest.raises(PipelineError) as failure:
+        coach.generate(analysis(),RESUME,1)
+    assert failure.value.code==expected and failure.value.uncertain and not failure.value.retryable
+
+def test_missing_database_ca_fails_before_connection(tmp_path):
+    with pytest.raises(ValueError,match='DB_SSLROOTCERT'):
+        Settings(_env_file=None,db_sslrootcert=tmp_path/'missing.crt')
