@@ -93,7 +93,16 @@ FROM matches;"""
 pg['parameters']['options']['queryReplacement']='={{ [$json.role_id, $json.catalog_version] }}'
 selected[4]['parameters']['content']='## Fast Role Search\nSelect Firstrole Knowledge Reader on Read Indexed Role. Uses the existing indexed documents, exact selected role ID and source/catalog version. No query embedding API call or simulated similarity score. No schema changes or broader permissions. Publish and select this workflow in Final MCP / search_internship_roles.'
 for i,n in enumerate(selected):n['position']=[220+i*270,220] if i<4 else [300,-120]
+# Dedicated manual-only test path. Production trigger inputs never receive defaults.
+selected.extend([
+ {'id':uid('manual-search-trigger'),'name':'Test Search Manually','type':'n8n-nodes-base.manualTrigger','typeVersion':1,'position':[220,500],'parameters':{}},
+ {'id':uid('manual-search-input'),'name':'Manual Test Input','type':'n8n-nodes-base.code','typeVersion':2,'position':[490,500],
+  'parameters':{'jsCode':"// This node is reachable ONLY from the manual trigger, never from Receive Search.\nreturn [{json:{input:'Microsoft Software Engineering Intern requirements',role_id:'MICROSOFT-01',catalog_version:1}}];"}}
+])
 search={'name':'Fast Role Search','nodes':selected,'connections':{selected[i]['name']:{'main':[[{'node':selected[i+1]['name'],'type':'main','index':0}]]} for i in range(3)},'settings':copy.deepcopy(search.get('settings',{})),'active':False,'pinData':{}}
+search['connections']['Test Search Manually']={'main':[[{'node':'Manual Test Input','type':'main','index':0}]]}
+search['connections']['Manual Test Input']={'main':[[{'node':'Validate Search','type':'main','index':0}]]}
+selected[4]['parameters']['content']+='\n\nManual testing: choose Test Search Manually from the Execute dropdown. This supplies an explicit MICROSOFT-01 test case. Receive Search stays strict for MCP calls and never substitutes a sample role.'
 for name,workflow in [('Fast Orchestrator.json',orchestrator),('Fast Role Search.json',search)]:
  (ROOT/name).write_text(json.dumps(workflow,indent=2,ensure_ascii=False),encoding='utf-8')
 with zipfile.ZipFile(ROOT/'Fast Workflow Import Pack.zip','w',zipfile.ZIP_DEFLATED) as z:

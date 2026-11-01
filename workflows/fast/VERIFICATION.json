@@ -8,5 +8,11 @@
   "live_fast_webhook_tested": false,
   "median_db_lookup_seconds": 0.021,
   "max_db_lookup_seconds": 0.063,
-  "no_database_changes": true
+  "no_database_changes": true,
+  "local_checks_passed": 130,
+  "published_mcp_fast_roles_passed": 15,
+  "manual_input_isolated": true,
+  "empty_integrated_input_rejected": true,
+  "new_manual_trigger_tested_live": false,
+  "fast_orchestrator_published": false
 }

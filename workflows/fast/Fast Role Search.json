@@ -79,7 +79,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "parameters": {
-        "content": "## Fast Role Search\nSelect Firstrole Knowledge Reader on Read Indexed Role. Uses the existing indexed documents, exact selected role ID and source/catalog version. No query embedding API call or simulated similarity score. No schema changes or broader permissions. Publish and select this workflow in Final MCP / search_internship_roles.",
+        "content": "## Fast Role Search\nSelect Firstrole Knowledge Reader on Read Indexed Role. Uses the existing indexed documents, exact selected role ID and source/catalog version. No query embedding API call or simulated similarity score. No schema changes or broader permissions. Publish and select this workflow in Final MCP / search_internship_roles.\n\nManual testing: choose Test Search Manually from the Execute dropdown. This supplies an explicit MICROSOFT-01 test case. Receive Search stays strict for MCP calls and never substitutes a sample role.",
         "width": 500,
         "height": 250,
         "color": 5
@@ -88,6 +88,30 @@
         300,
         -120
       ]
+    },
+    {
+      "id": "bc51fd3e-de5f-5f2b-87f7-ce5857745b25",
+      "name": "Test Search Manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        220,
+        500
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "9e53388d-e697-5045-b03d-aba6ec12f404",
+      "name": "Manual Test Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        490,
+        500
+      ],
+      "parameters": {
+        "jsCode": "// This node is reachable ONLY from the manual trigger, never from Receive Search.\nreturn [{json:{input:'Microsoft Software Engineering Intern requirements',role_id:'MICROSOFT-01',catalog_version:1}}];"
+      }
     }
   ],
   "connections": {
@@ -118,6 +142,28 @@
         [
           {
             "node": "Return Search Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Search Manually": {
+      "main": [
+        [
+          {
+            "node": "Manual Test Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test Input": {
+      "main": [
+        [
+          {
+            "node": "Validate Search",
             "type": "main",
             "index": 0
           }

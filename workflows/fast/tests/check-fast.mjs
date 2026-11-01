@@ -30,6 +30,13 @@ function run(workflow,name,input,state={}){
  const code=workflow.nodes.find(n=>n.name===name).parameters.jsCode;
  return new Function('$json','$input','$',code)(input,{all:()=>[{json:input}]},name=>({first:()=>({json:state[name]}),all:()=>[{json:state[name]}]}))[0].json;
 }
+check(search.nodes.some(n=>n.type==='n8n-nodes-base.manualTrigger'),'manual test trigger available');
+check(search.connections['Receive Search'].main[0][0].node==='Validate Search','production input stays direct and strict');
+check(search.connections['Test Search Manually'].main[0][0].node==='Manual Test Input','manual samples isolated from production');
+check(search.connections['Manual Test Input'].main[0][0].node==='Validate Search','manual case uses real validation');
+const manual=run(search,'Manual Test Input',{});
+check(run(search,'Validate Search',manual).role_id==='MICROSOFT-01','Execute manual path has valid explicit input');
+assert.throws(()=>run(search,'Validate Search',{input:null,role_id:null,catalog_version:null}),/invalid_role_id/,'empty MCP requests must not inherit test data');
 const current={role_id:'MICROSOFT-01',catalog_version:1,input:'Software engineering internship'};
 check(run(search,'Validate Search',current).role_id===current.role_id,'valid role input');
 for(const bad of [{...current,role_id:"MICROSOFT-01' OR 1=1 --"},{...current,catalog_version:0},{...current,input:'x'}])assert.throws(()=>run(search,'Validate Search',bad));
