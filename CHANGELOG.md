@@ -1,5 +1,9 @@
 # Changelog
 
+## Download selector fix, 1 November 2026
+
+Enable PDF and DOCX downloads in the approved-letter screen, remove obsolete prototype labels and repair the malformed Word option. All 52 browser checks pass, including selection of both formats, download extensions and byte signatures. Actual file generation remains in the authenticated Python backend.
+
 ## Integration update — 1 November 2026
 
 - Connect local API, queue worker and operator services to Supabase with separate restricted logins; secrets remain outside Git.

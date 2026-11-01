@@ -26,7 +26,7 @@ npm run dev
 
 Open http://127.0.0.1:5173/. Running the static frontend needs Node.js but no dependency installation. See the [frontend README](frontend/README.md) for tests, the API contract and integration details.
 
-**Current status:** the local FastAPI API and durable worker connect to Supabase Mumbai using separate restricted database logins with verified TLS. The worker calls the published authenticated n8n Orchestrator, which uses Gemini 3.5 Flash-Lite and real MCP search/date/word-count tools. The Microsoft DOCX flow passed real upload, generation, approval and exact TXT/DOCX/PDF downloads. Backend tests: 32 passed; frontend mocked-API checks: 46 passed. Read the integration report for the unresolved PDF queue test and validation limits. The catalog remains fictional educational data. Cloudflare/Render deployment and a public launch have not happened.
+**Current status:** the local FastAPI API and durable worker connect to Supabase Mumbai using separate restricted database logins with verified TLS. The worker calls the published authenticated n8n Orchestrator, which uses Gemini 3.5 Flash-Lite and real MCP search/date/word-count tools. The Microsoft DOCX flow passed real upload, generation, approval and exact TXT/DOCX/PDF downloads. Backend tests: 32 passed; frontend mocked-API checks: 52 passed. Read the integration report for the unresolved PDF queue test and validation limits. The catalog remains fictional educational data. Cloudflare/Render deployment and a public launch have not happened.
 
 ## Planned stack
 

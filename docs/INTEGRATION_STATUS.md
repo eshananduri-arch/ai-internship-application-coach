@@ -13,7 +13,7 @@
 | --- | --- | --- |
 | Backend pytest with FIRSTROLE_INTEGRATION=1 | 32 passed | Includes real Supabase approval/rejection, exact downloads and cross-owner isolation |
 | Python dependency consistency | Passed | pip check |
-| Frontend browser suite | 46 passed | Mocked API responses, not live provider generation |
+| Frontend browser suite | 52 passed | Mocked API responses, not live provider generation |
 | Final workflow checks | Passed | Six imports, 26 Code scripts, 12 MCP response cases |
 | Three runtime database logins | Passed | Verified SSL, correct inherited groups, no superuser or RLS bypass |
 | Published Orchestrator synthetic Microsoft request | Passed, 11.23 seconds | 166-word letter passed actual Python response validation |

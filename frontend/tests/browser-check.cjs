@@ -54,7 +54,12 @@ async function visible(page, id) { await page.locator('#fr-' + id).waitFor({ sta
       saved = body.final_letter;
       return reply({ status: 'approved', application_id: 'application-1', final_letter: saved });
     }
-    if (pathname.endsWith('/download')) return route.fulfill({ contentType: 'text/plain; charset=utf-8', body: saved });
+    if (pathname.endsWith('/download')) {
+      const format = new URL(req.url()).searchParams.get('format');
+      if (format === 'pdf') return route.fulfill({ contentType: 'application/pdf', body: Buffer.from('%PDF-1.4\nsynthetic browser download fixture') });
+      if (format === 'docx') return route.fulfill({ contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', body: Buffer.from('PK\x03\x04synthetic browser download fixture') });
+      return route.fulfill({ contentType: 'text/plain; charset=utf-8', body: saved });
+    }
     return reply({ message: 'Unexpected request' }, 404);
   });
   await page.goto(url);
@@ -108,6 +113,16 @@ async function visible(page, id) { await page.locator('#fr-' + id).waitFor({ sta
   const pendingDownload = page.waitForEvent('download'); await page.click('#fr-download');
   const download = await pendingDownload;
   check(fs.readFileSync(await download.path(), 'utf8') === exact, 'download contains the approved wording');
+  for (const [format, signature] of [['pdf', '%PDF-'], ['docx', 'PK']]) {
+    await page.selectOption('#fr-download-format', format);
+    check(await page.inputValue('#fr-download-format') === format, format + ' download format is selectable');
+    const pending = page.waitForEvent('download');
+    await page.click('#fr-download');
+    const file = await pending;
+    check(file.suggestedFilename().endsWith('.' + format), format + ' download uses the selected file extension');
+    check(fs.readFileSync(await file.path()).subarray(0, signature.length).toString() === signature, format + ' download preserves the backend file bytes');
+  }
+
   for (const width of [320, 360, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'layout fits viewport ' + width);
