@@ -1,0 +1,138 @@
+{
+  "name": "Fast Role Search",
+  "nodes": [
+    {
+      "name": "Receive Search",
+      "id": "2e8c7194-5126-52c7-a178-e88e632ee1a2",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "input",
+              "type": "string"
+            },
+            {
+              "name": "role_id",
+              "type": "string"
+            },
+            {
+              "name": "catalog_version",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "position": [
+        220,
+        220
+      ]
+    },
+    {
+      "name": "Validate Search",
+      "id": "f6c5e721-459b-5fee-93e0-5f1b6c693611",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "if(typeof $json.role_id!=='string'||!/^[A-Z]+-\\d{2}$/.test($json.role_id))throw new Error('invalid_role_id');\nif(!Number.isInteger($json.catalog_version)||$json.catalog_version<1)throw new Error('invalid_catalog_version');\nif(typeof $json.input!=='string'||$json.input.length<3||$json.input.length>1000)throw new Error('invalid_search_input');\nreturn [{json:{role_id:$json.role_id,catalog_version:$json.catalog_version}}];"
+      },
+      "position": [
+        490,
+        220
+      ]
+    },
+    {
+      "name": "Read Indexed Role",
+      "id": "ee9db164-2ddd-5649-b753-2b096b6cbd0d",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH matches AS (\n SELECT text,metadata\n FROM public.internship_role_chunks\n WHERE role_id=$1 AND metadata->>'dataset'='internship_roles'\n   AND metadata->>'source_version'=$2::text AND metadata->>'catalog_version'=$2::text\n   AND metadata->>'embedding_model'='models/gemini-embedding-001'\n ORDER BY id LIMIT 3\n)\nSELECT jsonb_build_object('ok',count(*)>0,'role_id',$1::text,'source_version',$2::integer,\n  'retrieval_method','exact_role_id',\n  'documents',coalesce(jsonb_agg(jsonb_build_object('text',text,'metadata',metadata)),'[]'::jsonb)) AS result\nFROM matches;",
+        "options": {
+          "connectionTimeout": 15,
+          "queryReplacement": "={{ [$json.role_id, $json.catalog_version] }}"
+        }
+      },
+      "position": [
+        760,
+        220
+      ]
+    },
+    {
+      "name": "Return Search Result",
+      "id": "83229c58-30b3-5a33-8739-09daf854b3ef",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "return [{json:$json.result}];"
+      },
+      "position": [
+        1030,
+        220
+      ]
+    },
+    {
+      "name": "Search Setup",
+      "id": "eca6fdf5-43ca-51c7-a521-7efbf49305c6",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "parameters": {
+        "content": "## Fast Role Search\nSelect Firstrole Knowledge Reader on Read Indexed Role. Uses the existing indexed documents, exact selected role ID and source/catalog version. No query embedding API call or simulated similarity score. No schema changes or broader permissions. Publish and select this workflow in Final MCP / search_internship_roles.",
+        "width": 500,
+        "height": 250,
+        "color": 5
+      },
+      "position": [
+        300,
+        -120
+      ]
+    }
+  ],
+  "connections": {
+    "Receive Search": {
+      "main": [
+        [
+          {
+            "node": "Validate Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Search": {
+      "main": [
+        [
+          {
+            "node": "Read Indexed Role",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Indexed Role": {
+      "main": [
+        [
+          {
+            "node": "Return Search Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kolkata",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false
+  },
+  "active": false,
+  "pinData": {}
+}

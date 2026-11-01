@@ -1,0 +1,12 @@
+{
+  "indexed_roles_verified": 15,
+  "reader_ssl_verified": true,
+  "unknown_role_and_version_blocked": true,
+  "backend_contract_passed": true,
+  "unit_model_response_is_mocked": true,
+  "live_gemini_calls": 0,
+  "live_fast_webhook_tested": false,
+  "median_db_lookup_seconds": 0.021,
+  "max_db_lookup_seconds": 0.063,
+  "no_database_changes": true
+}
