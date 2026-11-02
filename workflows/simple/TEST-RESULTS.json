@@ -1,0 +1,421 @@
+{
+  "name": "Final Orchestrator",
+  "revision": "provider-structured-json",
+  "tested_at": "2026-11-02T18:48:33.311295+05:30",
+  "workflow_sha256": "c067de58bfe59cc1b5ba2c88779be872e1b606d772698a364782743939b4c55f",
+  "node_count": 21,
+  "gemini_generation_requests": 1,
+  "model": "gemini-3.5-flash-lite",
+  "schema_sent_to_provider": true,
+  "schema_field": "generationConfig.responseFormat.text.schema",
+  "saved_google_credential_type": "googlePalmApi",
+  "local_checks_passed": 216,
+  "actual_backend_validator_passed": true,
+  "n8n_expression_runtime_version": "2.16.0",
+  "n8n_expressions_evaluated": 18,
+  "live_mcp_tools_passed_in_runtime_replay": true,
+  "generation_mocked_in_replay": true,
+  "sanitizer_mocked_in_replay": true,
+  "replay_seconds_not_generation_latency": 4.851,
+  "revised_import_published": true,
+  "revised_request_live_gemini_tested": true,
+  "website_end_to_end_tested": false,
+  "backend_changes_required": false,
+  "database_changes_required": false,
+  "credentials_embedded": false,
+  "pushed_to_github": false,
+  "prior_live_results": "tests/previous-native-live-results.json",
+  "live_generation_first_pass_passed": 15,
+  "live_generation_total": 15,
+  "live_invalid_request_checks_passed": 7,
+  "live_invalid_request_checks_total": 7,
+  "targeted_previously_failing_roles_passed": 2,
+  "live_generation_timing_seconds": {
+    "minimum": 2.698,
+    "median": 2.94,
+    "maximum": 6.334
+  },
+  "automatic_generation_retries": 0,
+  "json_or_schema_errors_in_live_matrix": 0,
+  "applications_saved_or_approved_during_test": false,
+  "live_role_results": [
+    {
+      "role_id": "AMAZON-01",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 6.334,
+      "words": 117,
+      "usage": {
+        "input_tokens": 596,
+        "output_tokens": 388,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "AMAZON-02",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 3.073,
+      "words": 116,
+      "usage": {
+        "input_tokens": 603,
+        "output_tokens": 379,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "AMAZON-03",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 2.999,
+      "words": 115,
+      "usage": {
+        "input_tokens": 598,
+        "output_tokens": 341,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "MICROSOFT-01",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 2.924,
+      "words": 134,
+      "usage": {
+        "input_tokens": 610,
+        "output_tokens": 417,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "MICROSOFT-02",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 2.879,
+      "words": 121,
+      "usage": {
+        "input_tokens": 596,
+        "output_tokens": 332,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "MICROSOFT-03",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 2.94,
+      "words": 117,
+      "usage": {
+        "input_tokens": 601,
+        "output_tokens": 341,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "GOOGLE-01",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 2.698,
+      "words": 110,
+      "usage": {
+        "input_tokens": 606,
+        "output_tokens": 323,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "GOOGLE-02",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 3.086,
+      "words": 127,
+      "usage": {
+        "input_tokens": 593,
+        "output_tokens": 396,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "GOOGLE-03",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 2.966,
+      "words": 110,
+      "usage": {
+        "input_tokens": 597,
+        "output_tokens": 358,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "NVIDIA-01",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 2.741,
+      "words": 121,
+      "usage": {
+        "input_tokens": 606,
+        "output_tokens": 327,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "NVIDIA-02",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 2.769,
+      "words": 139,
+      "usage": {
+        "input_tokens": 599,
+        "output_tokens": 326,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "NVIDIA-03",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 2.861,
+      "words": 111,
+      "usage": {
+        "input_tokens": 603,
+        "output_tokens": 314,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "DELOITTE-01",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 3.024,
+      "words": 125,
+      "usage": {
+        "input_tokens": 601,
+        "output_tokens": 354,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "DELOITTE-02",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 3.05,
+      "words": 97,
+      "usage": {
+        "input_tokens": 606,
+        "output_tokens": 370,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    },
+    {
+      "role_id": "DELOITTE-03",
+      "passed": true,
+      "http_status": 200,
+      "seconds": 2.707,
+      "words": 120,
+      "usage": {
+        "input_tokens": 606,
+        "output_tokens": 357,
+        "model": "gemini-3.5-flash-lite",
+        "model_invocations": 1
+      }
+    }
+  ],
+  "live_invalid_request_results": [
+    {
+      "case": "empty_request",
+      "expected_http_status": 422,
+      "passed": true,
+      "http_status": 422,
+      "seconds": 0.35,
+      "response": {
+        "status": "failed",
+        "error_code": "invalid_identity",
+        "message": "The coaching request could not complete. No application was approved or saved.",
+        "mcp_status": {
+          "Open MCP Session": {
+            "executed": false
+          },
+          "Mark MCP Ready": {
+            "executed": false
+          },
+          "Search Selected Role": {
+            "executed": false
+          },
+          "Check Deadline": {
+            "executed": false
+          },
+          "Count Exact Final Letter": {
+            "executed": false
+          }
+        }
+      }
+    },
+    {
+      "case": "missing_auth",
+      "expected_http_status": 403,
+      "passed": true,
+      "http_status": 403,
+      "seconds": 0.192
+    },
+    {
+      "case": "empty_resume",
+      "expected_http_status": 422,
+      "passed": true,
+      "http_status": 422,
+      "seconds": 0.349,
+      "response": {
+        "status": "failed",
+        "error_code": "invalid_resume",
+        "message": "The coaching request could not complete. No application was approved or saved.",
+        "mcp_status": {
+          "Open MCP Session": {
+            "executed": false
+          },
+          "Mark MCP Ready": {
+            "executed": false
+          },
+          "Search Selected Role": {
+            "executed": false
+          },
+          "Check Deadline": {
+            "executed": false
+          },
+          "Count Exact Final Letter": {
+            "executed": false
+          }
+        }
+      }
+    },
+    {
+      "case": "oversized_resume",
+      "expected_http_status": 422,
+      "passed": true,
+      "http_status": 422,
+      "seconds": 0.454,
+      "response": {
+        "status": "failed",
+        "error_code": "invalid_resume",
+        "message": "The coaching request could not complete. No application was approved or saved.",
+        "mcp_status": {
+          "Open MCP Session": {
+            "executed": false
+          },
+          "Mark MCP Ready": {
+            "executed": false
+          },
+          "Search Selected Role": {
+            "executed": false
+          },
+          "Check Deadline": {
+            "executed": false
+          },
+          "Count Exact Final Letter": {
+            "executed": false
+          }
+        }
+      }
+    },
+    {
+      "case": "invalid_role_id",
+      "expected_http_status": 422,
+      "passed": true,
+      "http_status": 422,
+      "seconds": 0.385,
+      "response": {
+        "status": "failed",
+        "error_code": "invalid_role_id",
+        "message": "The coaching request could not complete. No application was approved or saved.",
+        "mcp_status": {
+          "Open MCP Session": {
+            "executed": false
+          },
+          "Mark MCP Ready": {
+            "executed": false
+          },
+          "Search Selected Role": {
+            "executed": false
+          },
+          "Check Deadline": {
+            "executed": false
+          },
+          "Count Exact Final Letter": {
+            "executed": false
+          }
+        }
+      }
+    },
+    {
+      "case": "prompt_injection",
+      "expected_http_status": 422,
+      "passed": true,
+      "http_status": 422,
+      "seconds": 0.329,
+      "response": {
+        "status": "failed",
+        "error_code": "blocked_document_instructions",
+        "message": "The coaching request could not complete. No application was approved or saved.",
+        "mcp_status": {
+          "Open MCP Session": {
+            "executed": false
+          },
+          "Mark MCP Ready": {
+            "executed": false
+          },
+          "Search Selected Role": {
+            "executed": false
+          },
+          "Check Deadline": {
+            "executed": false
+          },
+          "Count Exact Final Letter": {
+            "executed": false
+          }
+        }
+      }
+    },
+    {
+      "case": "wrong_date",
+      "expected_http_status": 422,
+      "passed": true,
+      "http_status": 422,
+      "seconds": 0.312,
+      "response": {
+        "status": "failed",
+        "error_code": "invalid_current_date",
+        "message": "The coaching request could not complete. No application was approved or saved.",
+        "mcp_status": {
+          "Open MCP Session": {
+            "executed": false
+          },
+          "Mark MCP Ready": {
+            "executed": false
+          },
+          "Search Selected Role": {
+            "executed": false
+          },
+          "Check Deadline": {
+            "executed": false
+          },
+          "Count Exact Final Letter": {
+            "executed": false
+          }
+        }
+      }
+    }
+  ]
+}

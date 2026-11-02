@@ -1,0 +1,70 @@
+{
+  "Search Selected Role": {
+    "method": "POST",
+    "url": "={{ $('Workflow Settings').first().json.mcp_url }}",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth",
+    "sendHeaders": true,
+    "headerParameters": {
+      "parameters": [
+        {
+          "name": "Accept",
+          "value": "application/json, text/event-stream"
+        },
+        {
+          "name": "MCP-Protocol-Version",
+          "value": "2025-03-26"
+        },
+        {
+          "name": "Mcp-Session-Id",
+          "value": "={{ $('Validate MCP Session').first().json.session_id }}"
+        }
+      ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ (()=>{if($json.statusCode!==202)throw new Error('mcp_tool_failed');const s=$('Use Sanitized Resume').first().json;return {jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'search_internship_roles',arguments:{input:s.search_query,role_id:s.role_id,catalog_version:s.catalog_version}}};})() }}",
+    "options": {
+      "timeout": 20000,
+      "redirect": {
+        "redirect": {
+          "followRedirects": false
+        }
+      },
+      "response": {
+        "response": {
+          "responseFormat": "text",
+          "outputPropertyName": "body",
+          "fullResponse": true,
+          "neverError": true
+        }
+      }
+    }
+  },
+  "Gemini Chat - 3.5 Flash-Lite": {
+    "resource": "text",
+    "operation": "message",
+    "modelId": {
+      "__rl": true,
+      "mode": "id",
+      "value": "models/gemini-3.5-flash-lite"
+    },
+    "messages": {
+      "values": [
+        {
+          "role": "user",
+          "content": "={{ $json.model_request.contents[0].parts[0].text }}"
+        }
+      ]
+    },
+    "simplify": false,
+    "jsonOutput": true,
+    "builtInTools": {},
+    "options": {
+      "candidateCount": 1,
+      "maxOutputTokens": 1536,
+      "maxToolsIterations": 1,
+      "systemMessage": "={{ $json.model_request.systemInstruction.parts[0].text + '\\nRequired JSON shape, all keys mandatory and no extra keys: {\"strengths\":[\"supported strength\"],\"gaps\":[\"honest gap\"],\"fit\":\"strong|moderate|limited\",\"evidence\":[{\"claim\":\"supported claim\",\"quote\":\"verbatim resume quote\"}],\"body\":\"100-140 word letter body in paragraphs, without greeting or signature\",\"self_review\":{\"passed\":true,\"feedback\":[]}}. Choose exactly one of strong, moderate or limited for fit. Treat the example strings as format guidance only; never copy them as candidate facts.' }}"
+    }
+  }
+}

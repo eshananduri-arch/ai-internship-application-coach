@@ -1,5 +1,7 @@
 # Fast internship coach workflows
 
+**Earlier design/reference.** The current published website generation workflow and its all-role live results are in [../simple/README.md](../simple/README.md). Keep Fast Role Search as the supporting exact-role helper; do not replace the working published Orchestrator with this earlier fast orchestrator.
+
 Opt-in replacement based on the previous Workflow 2 Fast Internship Coach: one model call followed by deterministic validation and explicit human approval. This folder is separate from workflows/final/ and does not deploy or overwrite anything.
 
 ## What changed
@@ -27,9 +29,9 @@ Knowledge Loader, Verification and Error Monitor remain the existing workflows. 
 
 The design has exactly one Gemini HTTP request, one read-only role database query, no query-embedding request, no agent loops, and three explicit MCP calls for actual role/deadline/final-word-count evidence. Output is capped at 1000 model tokens and a 250-word complete letter. No uncertain model request is silently retried.
 
-Local checks passed (130 structural/contract/safety assertions). The exact SQL was tested with the restricted reader against all 15 current indexed roles; absent roles and wrong source versions returned no substitute documents. Median lookup in that check was 0.021 seconds (maximum 0.063); these are database measurements, not end-to-end n8n timings. A mocked one-call response passed the existing actual Python backend validator. Tests block unsupported evidence, failed self-review, placeholders, overlong/wrong-role letters, truncated output and a mismatched final-letter hash.
+Local checks passed (188 structural/contract/safety assertions). The exact SQL was tested with the restricted reader against all 15 current indexed roles; absent roles and wrong source versions returned no substitute documents. Median lookup in that check was 0.021 seconds (maximum 0.063); these are database measurements, not end-to-end n8n timings. A mocked one-call response passed the existing actual Python backend validator. Tests block unsupported evidence, failed self-review, placeholders, overlong/wrong-role letters, truncated output and a mismatched final-letter hash.
 
-The new fast webhook has **not** been imported, published or timed live. Five seconds is a warm-path target, not a guarantee; three MCP round trips, provider response time, queue occupancy and hosting cold starts still count. This change does not remove the observed Render startup delay or the frontend's 30-second request timeout. Measure from a fresh upload after deployment, separately from backend cold-start time.
+The fast webhook is published. The latest live letter request returned Cloudflare origin_bad_gateway (HTTP 502) in 2.715 seconds; this is a failure duration, not a successful generation time. All three published MCP tools passed independently. A full live generation remains unverified. Five seconds is a warm-path target, not a guarantee; three MCP round trips, provider response time, queue occupancy and hosting cold starts still count. This change does not remove the observed Render startup delay or the frontend's 30-second request timeout. Measure from a fresh upload after deployment, separately from backend cold-start time.
 
 ```sh
 python workflows/fast/build.py
@@ -41,3 +43,15 @@ Keep the original published Final Orchestrator for rollback. To roll back genera
 ## Manual-input correction
 
 The helper now has two separate entry points: Receive Search for real caller data, and Test Search Manually -> Manual Test Input for an explicit sample test. Both pass through the same strict validator and real database lookup. Null/missing role_id on the caller path remains an error; it is never replaced with a default. Existing published MCP calls passed for all 15 roles. The corrected manual trigger still needs importing/publishing in your n8n account; remote manual execution is not claimed as tested.
+
+## Diagnosing the current gateway error
+
+The local import now maps handled upstream errors from 502 to 503 while preserving the safe JSON body. Validation stays 422 and throttling stays 429. The Python backend already handles 503 and its allowlisted error codes. This patch passed local tests; it has not been applied or verified remotely and does not establish the cause of the current origin gateway failure.
+
+For the existing published workflow, avoid reimporting/reselecting credentials: open Return Safe Failure -> Options -> Response Code, set the expression to `{{ $json.http_status === 502 ? 503 : $json.http_status }}`, save and publish. Then rerun the synthetic test to read the safe failure code. If the gateway still replaces the response, the saved n8n execution/runtime error is required.
+
+The former final-internship-coach production path returns 404 after the in-place replacement. Both Render API and worker must use the new fast-internship-coach production URL after generation is verified, or the existing webhook path must be restored for compatibility. Local files do not change Render settings.
+
+## MCP parser correction
+
+The published diagnostic returned HTTP 503 / mcp_invalid_envelope in 3.259 seconds. The parser now supports direct parsed text blocks, JSON-RPC result envelopes and explicit single-result wrappers, with strict error/ambiguity/depth rejection and unchanged downstream evidence checks. Tests replay captured public MCP role/date/count results and the official n8n parsed-text shape. The exact failing published wrapper has not yet been inspected; a successful live generation is still unverified. To preserve existing credentials, replace only the complete Code contents of Validate Role Evidence, Validate Deadline and Build Backend Response using the matching files in the MCP Parser Fix download, then save/publish and rerun the live test.

@@ -3,13 +3,22 @@ from pathlib import Path
 import copy,json,uuid,zipfile
 ROOT=Path(__file__).resolve().parent
 FINAL=ROOT.parent/'final'
+PARSER=(ROOT/'mcp-parser.js').read_text(encoding='utf-8').strip()+'\n'
+
+def fix_parser(script):
+ start=script.find('function mcpObject(')
+ if start<0:return script
+ end=script.index('function httpBody(',start)
+ return script[:start]+PARSER+script[end:]
 def read(name):return json.loads((FINAL/name).read_text(encoding='utf-8'))
 def uid(name):return str(uuid.uuid5(uuid.NAMESPACE_URL,'firstrole-fast:'+name))
 base=read('Final Orchestrator.json');by={n['name']:n for n in base['nodes']}
-common=by['Validate and Protect Input']['parameters']['jsCode'].rsplit('\ntry {',1)[0]
+common=fix_parser(by['Validate and Protect Input']['parameters']['jsCode']).rsplit('\ntry {',1)[0]
 def guarded(code):return common+'\ntry {\n'+code+'\n} catch (e) { return failure(e); }\n'
 def clone(name,new=None):
- n=copy.deepcopy(by[name]);n['name']=new or name;n['id']=uid(n['name']);n.pop('credentials',None);return n
+ n=copy.deepcopy(by[name]);n['name']=new or name;n['id']=uid(n['name']);n.pop('credentials',None)
+ if 'jsCode' in n['parameters']:n['parameters']['jsCode']=fix_parser(n['parameters']['jsCode'])
+ return n
 def code(name,body):return {'id':uid(name),'name':name,'type':'n8n-nodes-base.code','typeVersion':2,'parameters':{'jsCode':guarded(body)},'position':[0,0]}
 prepare=r"""
 const s=$json;
@@ -67,7 +76,12 @@ step(clone('Matcher Model','Gemini One Call'))
 step(code('Validate One Call',validate),True)
 step(clone('Count Exact Final Letter'))
 response=clone('Build Backend Response');response['parameters']['jsCode']=response['parameters']['jsCode'].replace("first('Validate Critic Result')","first('Validate One Call')")
-step(response,True);step(clone('Return Career Review'));add(clone('Return Safe Failure'))
+step(response,True);step(clone('Return Career Review'))
+# Distinguish a handled upstream failure (503) from an edge gateway failure (502).
+# Preserve the safe structured failure for callers without changing 422/429.
+failure_response=clone('Return Safe Failure')
+failure_response['parameters']['options']['responseCode']='={{ $json.http_status === 502 ? 503 : $json.http_status }}'
+add(failure_response)
 nodes.append({'id':uid('Fast Design'),'name':'Fast Design','type':'n8n-nodes-base.stickyNote','typeVersion':1,'position':[200,-130],'parameters':{'content':'## Fast Orchestrator\nOne Gemini 3.5 Flash-Lite call, real MCP evidence, same-model self-review and explicit human approval in Python. No agent loops or invented tool evidence. Set the Backend Header on the webhook, MCP Header on the three MCP clients and Google credential on Gemini One Call. Path: fast-internship-coach. Latency must be measured after import; five seconds is a target, not a guarantee.','width':770,'height':260}})
 settings=copy.deepcopy(base['settings']);settings['executionTimeout']=90
 orchestrator={'name':'Fast Orchestrator','nodes':nodes,'connections':connections,'settings':settings,'active':False,'pinData':{}}

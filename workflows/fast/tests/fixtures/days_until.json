@@ -1,0 +1,8 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"ok\":true,\"deadline\":\"2026-12-20\",\"today\":\"2026-11-01\",\"timezone\":\"Asia/Kolkata\",\"days_remaining\":49,\"expired\":false,\"deadline_is_today\":false,\"rule\":\"Calendar-day difference in Asia/Kolkata; the closing hour is not inferred.\"}"
+    }
+  ]
+}

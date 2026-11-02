@@ -1,6 +1,20 @@
-# Integration status, 1 November 2026
+# Integration status, updated 2 November 2026
 
-## Connected locally
+## Current published one-call workflow, 2 November 2026
+
+The current generation import is [workflows/simple/Final Orchestrator.json](../workflows/simple/Final%20Orchestrator.json). Its README includes exact import and saved-credential setup. The simple/ folder name distinguishes this website-compatible design from earlier final/ and fast/ references; the workflow name remains **Final Orchestrator**.
+
+- One Gemini 3.5 Flash-Lite POST sends a strict provider response schema. Matching, drafting and explicitly labelled same-model self-review share that response; it is not an independent critic.
+- All **15/15 role generations passed on their first attempt** in a published-webhook test; all **7/7 invalid-request cases passed**. There were no JSON/schema failures in that run and no automatic generation retries.
+- Actual webhook times: **2.698-6.334 seconds**, median **2.940 seconds**. Exact final-letter MCP word count/hash, role/source version, deadline, usage and the actual Python response contract passed for each result.
+- **216 local workflow checks**, 30 backend unit tests and real n8n-expression/live-MCP replay checks passed. Replay Gemini/sanitization were simulated; the separate published role matrix used real Gemini.
+- Frontend URL: https://ai-internship-application-coach.pages.dev ; backend URL: https://ai-internship-application-coach.onrender.com . The n8n production webhook path and backend bearer token stay unchanged.
+- This revision changed workflow files/tests/documentation only. No new backend code, database migration or manual Cloudflare/Render deployment is required. Git-connected hosts may rebuild automatically according to their configured settings.
+- The complete deployed website upload -> queue -> approval -> PDF/DOCX/TXT journey, concurrency and provider outages were not retested in this run. Measurements do not guarantee future latency, availability or factual quality. No applications were saved or approved during the synthetic webhook matrix.
+
+See [machine-readable results](../workflows/simple/TEST-RESULTS.json). Older results below describe the earlier 1 November checkpoint and are retained as history.
+
+## Connected locally, historical checkpoint
 
 - FastAPI: http://127.0.0.1:8010/ ; readiness reports database, private sessions and coaching configured. This is local development, not a deployed public service.
 - API, queue worker and management services use three separate Supabase session-pooler login accounts. Each inherits only internship_api, internship_worker or internship_operator. All use verified TLS with the public Supabase CA; none is administrator or RLS bypass. Passwords, connection URLs, session/encryption secrets and webhook token remain in ignored local environment files.
@@ -36,7 +50,7 @@ From backend/:
 
 The .env.example lists required settings. Keep the current encryption/session keys stable. New maintainers must obtain their own secrets and suitable restricted database access; a public source repository never contains a shared database password. Configure environment secrets separately on Render.
 
-## Remaining work
+## Remaining work at the 1 November checkpoint
 
 Diagnose the intermittent queue-driven Amazon PDF failure; extend live checks to all 15 roles and concurrent clients; configure Cloudflare/Render routing and cookie behavior; remove the development frontend catalog fallback for public launch; add retention/recovery and backup checks; reconcile environment-specific authentication migration history before automated database deployment. No Cloudflare/Render publication or automatic GitHub-to-n8n deployment is enabled.
 

@@ -1,10 +1,18 @@
 # Changelog
 
+## Structured one-call workflow, 2 November 2026
+
+- Add the current Final Orchestrator import and reproducible builder under workflows/simple/. One schema-constrained Gemini 3.5 Flash-Lite request replaces JSON-only native generation; backend and database contracts stay unchanged.
+- Correct actual n8n expression delimiter/branch behavior and parse the real MCP HTTP JSON/SSE envelope with initialization, notification and cleanup.
+- Include 216 workflow checks, real-expression/live-MCP replay, public role fixtures and live results. All 15 role generations and 7 invalid-request cases passed through the published webhook; median latency was 2.940 seconds (range 2.698-6.334).
+- Preserve earlier fast-workflow fixes and failed native-generation results as clearly labelled references. No credentials, private environment files or visitor data are committed. No new backend/database deployment is required for this workflow update; the full deployed UI journey was not retested.
+
+
 ## Download selector fix, 1 November 2026
 
 Enable PDF and DOCX downloads in the approved-letter screen, remove obsolete prototype labels and repair the malformed Word option. All 52 browser checks pass, including selection of both formats, download extensions and byte signatures. Actual file generation remains in the authenticated Python backend.
 
-## Integration update � 1 November 2026
+## Integration update — 1 November 2026
 
 - Connect local API, queue worker and operator services to Supabase with separate restricted logins; secrets remain outside Git.
 - Add the public Supabase CA and configurable verified TLS for all four connection pools, plus a connection-check script.
@@ -14,7 +22,7 @@ Enable PDF and DOCX downloads in the approved-letter screen, remove obsolete pro
 
 Validation: 32 backend tests (including live PostgreSQL isolation/decision tests), 46 frontend mocked-API checks, six workflow structures, 26 Code scripts and 12 MCP envelope cases pass. The live Microsoft DOCX approval/download journey passed; broader end-to-end results and the PDF queue issue are documented in docs/INTEGRATION_STATUS.md. Original v1.0.0 remains unchanged. No hosting deployment is included.
 
-## Version 1.0.0 — 31 October 2026
+## Version 1.0.0 â€” 31 October 2026
 
 Development checkpoint covering the frontend, backend, Supabase database definition, source documents, tests and draft MCP tools. This checkpoint is not a production deployment or an end-to-end working AI release.
 

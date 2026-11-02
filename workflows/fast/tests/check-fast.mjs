@@ -21,6 +21,12 @@ for(const workflow of [orchestration,search]){
   check(names.has(source),'source node exists');for(const arrays of Object.values(ports))for(const array of arrays)for(const target of array)check(names.has(target.node),'destination node exists');
  }
 }
+const failureStatus=orchestration.nodes.find(n=>n.name==='Return Safe Failure').parameters.options.responseCode;
+check(failureStatus==='={{ $json.http_status === 502 ? 503 : $json.http_status }}','handled upstream failures use a distinct service-unavailable status');
+const responseStatus=new Function('$json','return '+failureStatus.slice(3,-2).trim());
+check(responseStatus({http_status:502})===503,'upstream unavailable uses 503');
+check(responseStatus({http_status:422})===422,'validation remains 422');
+check(responseStatus({http_status:429})===429,'throttling remains 429');
 check(orchestration.nodes.filter(n=>n.type==='n8n-nodes-base.httpRequest').length===1,'exactly one model HTTP call');
 check(search.nodes.every(n=>n.type!=='n8n-nodes-base.httpRequest'),'no embedding API request');
 check(search.nodes.filter(n=>n.type==='n8n-nodes-base.postgres').length===1,'one role database lookup');
@@ -72,6 +78,25 @@ for(const [change,expected] of [
  check(failure.failed&&failure.body.error_code===expected,'invalid draft rejected: '+expected);
 }
 const truncated=provider(model);truncated.body.candidates[0].finishReason='MAX_TOKENS';check(run(orchestration,'Validate One Call',truncated,states).body.error_code==='model_incomplete_output','truncated response blocked');
+// Replay captured public MCP results and n8n's documented JSON-parsed text shape.
+const parserSource=fs.readFileSync(path.join(root,'mcp-parser.js'),'utf8');
+const parseMcp=new Function("function assert(c,m){if(!c)throw new Error(m)}function fail(m){throw new Error(m)}"+parserSource+';return mcpObject;')();
+for(const tool of ['search_internship_roles','days_until','word_count']){
+ const raw=JSON.parse(fs.readFileSync(path.join(root,'tests/fixtures',tool+'.json')));
+ const expected=JSON.parse(raw.content[0].text);const value=Array.isArray(expected)?expected[0]:expected;
+ const parsed={content:raw.content.map(c=>({...c,text:JSON.parse(c.text)}))};
+ for(const wrap of [x=>x,x=>({json:x}),x=>({response:x}),x=>({result:x}),x=>({output:x}),x=>({data:x}),x=>({jsonrpc:'2.0',id:1,result:x})]){
+  check(JSON.stringify(parseMcp(wrap(raw)))===JSON.stringify(value),'raw wrapper decoded: '+tool);
+  check(JSON.stringify(parseMcp(wrap(parsed)))===JSON.stringify(value),'parsed wrapper decoded: '+tool);
+ }
+ check(JSON.stringify(parseMcp(parsed.content[0]))===JSON.stringify(value),'direct parsed text block: '+tool);
+}
+for(const bad of [{result:{isError:true}},{result:{error:'failed'}},{output:{error:'failed'}},
+ {result:{ok:true},output:{ok:false}},[{ok:true},{ok:true}],{unrelated:{ok:true}},
+ {content:[{type:'text',text:'not json'}]},{content:[{type:'image',data:'fake'}]}]){
+ assert.throws(()=>parseMcp(bad));checks++;
+}
+let deep={ok:true};for(let i=0;i<15;i++)deep={result:deep};assert.throws(()=>parseMcp(deep));checks++;
 const directory=process.env.FAST_TEST_ARTIFACTS;
 if(directory){fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(path.join(directory,'fast-response.json'),JSON.stringify(response,null,2));}
 console.log(`Fast workflow checks passed: ${checks}. One model call; no query embedding; real MCP evidence required.`);

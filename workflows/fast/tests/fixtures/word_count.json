@@ -1,0 +1,8 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"ok\":true,\"word_count\":3,\"maximum_words\":250,\"within_limit\":true,\"nonempty\":true,\"rule\":\"whitespace_v1\",\"normalization\":\"CRLF and CR to LF; no other rewriting\",\"text_sha256\":\"1495ec375ee7774641c87765c98d2b732fe98674fc660f7afe68b28ba1971ef6\"}"
+    }
+  ]
+}

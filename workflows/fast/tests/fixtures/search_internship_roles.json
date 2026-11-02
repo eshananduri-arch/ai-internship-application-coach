@@ -1,0 +1,8 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "[\n  {\n    \"ok\": true,\n    \"role_id\": \"MICROSOFT-01\",\n    \"documents\": [\n      {\n        \"text\": \"Educational simulated internship listing. Not a verified live vacancy.\\n## 1. Software Engineering Intern\\nRole ID: MICROSOFT-01\\nCompany: Microsoft\\nLocation: Hyderabad, India\\nDuration: 3 months (simulated)\\nStipend: INR 75,000/month (simulated)\\nDeadline: 2026-12-20 (simulated)\\nEligibility: B.Tech students in relevant computing disciplines (simulated).\\nRequired skills: C++ or C# or Java or Python; DSA; OOP; SQL; software fundamentals\\nPreferred skills: Azure; GitHub; REST APIs; unit testing; CI/CD\\nResponsibilities: Implement features; write tests; fix defects; maintain documentation\\nRelevant resume evidence: Full-stack, developer tooling or cloud application projects\\nEvaluation: Only cite resume-supported evidence; no protected-trait scoring.\",\n        \"metadata\": {\n          \"company\": \"Microsoft\",\n          \"dataset\": \"internship_roles\",\n          \"role_id\": \"MICROSOFT-01\",\n          \"role_sha256\": \"a641667b6bbf697575825b90bae9fb8a22aef2a6529e1a9f4319a5f1589bff26\",\n          \"document_key\": \"microsoft_internships\",\n          \"source_title\": \"Microsoft Internship Roles\",\n          \"source_sha256\": \"82c8094d7911feeeed0f5ac9a0b57113ddeca959adbac38d00699b696e10d4cc\",\n          \"source_version\": 1,\n          \"catalog_version\": 1,\n          \"embedding_model\": \"models/gemini-embedding-001\"\n        }\n      }\n    ],\n    \"source_version\": 1,\n    \"retrieval_method\": \"exact_role_id\"\n  }\n]"
+    }
+  ]
+}

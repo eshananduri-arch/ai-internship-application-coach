@@ -1,0 +1,38 @@
+{
+  "id": "17ea2bf8-671d-553e-b3ce-c8c0ed785cc6",
+  "name": "Gemini Chat - 3.5 Flash-Lite",
+  "type": "@n8n/n8n-nodes-langchain.googleGemini",
+  "typeVersion": 1.2,
+  "position": [
+    220,
+    820
+  ],
+  "retryOnFail": false,
+  "parameters": {
+    "resource": "text",
+    "operation": "message",
+    "modelId": {
+      "__rl": true,
+      "mode": "id",
+      "value": "models/gemini-3.5-flash-lite"
+    },
+    "messages": {
+      "values": [
+        {
+          "role": "user",
+          "content": "={{ $json.model_request.contents[0].parts[0].text }}"
+        }
+      ]
+    },
+    "simplify": false,
+    "jsonOutput": true,
+    "builtInTools": {},
+    "options": {
+      "candidateCount": 1,
+      "maxOutputTokens": 1536,
+      "maxToolsIterations": 1,
+      "systemMessage": "={{ $json.native_system_prompt }}"
+    }
+  },
+  "onError": "continueErrorOutput"
+}
