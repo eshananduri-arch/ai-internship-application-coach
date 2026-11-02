@@ -39,8 +39,10 @@ export function setupIntake(onGenerate) {
     if (name.length < 2) return message('input-error', 'Enter your full name for the signature.');
     state.busy = true;
     el('generate').disabled = true;
+    el('form').setAttribute('aria-busy', 'true');
+    message('connection-status', 'Connecting securely to the server...');
     try {
-      await api.session();
+      await api.session(() => message('connection-status', 'Waiting for the server to respond. Please keep this page open.'));
       state.input = { request_id: crypto.randomUUID(), company: row.company, role_id: row.role_id, role_title: row.role, candidate_name: name };
       state.fileName = state.file.name;
       state.letter = ''; state.approvedLetter = ''; state.applicationId = ''; state.analysisId = '';
@@ -52,6 +54,8 @@ export function setupIntake(onGenerate) {
     } finally {
       state.busy = false;
       el('generate').disabled = false;
+      el('form').removeAttribute('aria-busy');
+      message('connection-status');
     }
   });
 }

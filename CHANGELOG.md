@@ -1,5 +1,13 @@
 # Changelog
 
+## Deployed startup recovery, 2 November 2026
+
+- Reproduce a public /api/session 502 while Render starts; verify that Render health and session endpoints recover.
+- Add session-only, bounded GET retries with a visible connection status. Resume uploads and approval/rejection POST requests are never automatically replayed. Authentication, rate limits, missing configuration and invalid CSRF responses fail directly.
+- Verify 22 deterministic retry-safety checks and 56 browser checks. A synthetic DOCX passed the deployed Cloudflare -> Render -> queue -> n8n generation flow, rejection and other-visitor isolation. No approved application was created.
+- This frontend correction requires a Cloudflare Pages rebuild. No n8n republish, database migration or backend code change is needed. Render startup delay remains a hosting property, not model-generation time.
+
+
 ## Structured one-call workflow, 2 November 2026
 
 - Add the current Final Orchestrator import and reproducible builder under workflows/simple/. One schema-constrained Gemini 3.5 Flash-Lite request replaces JSON-only native generation; backend and database contracts stay unchanged.

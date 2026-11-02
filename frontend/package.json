@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node tools/dev-server.mjs",
-    "test": "node tests/browser-check.cjs"
+    "test": "node tests/session-check.mjs && node tests/browser-check.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"

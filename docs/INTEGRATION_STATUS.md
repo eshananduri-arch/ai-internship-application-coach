@@ -1,5 +1,15 @@
 # Integration status, updated 2 November 2026
 
+## Deployed API startup recovery, 2 November 2026
+
+The public page returned 200 while `/api/session` returned 502 before a resume was submitted. Direct Render health requests then returned 200 after 32.92 and 36.23 seconds, and the proxied session route recovered to 200. This is consistent with backend startup/wake-up; the service plan/deployment event was not inspected. Render documents that free services sleep after 15 idle minutes and can take about a minute to wake: https://render.com/docs/free .
+
+The frontend now retries only transient session GET failures (network/502/503/504), with exponential waits capped at 10 seconds, at most 10 requests and a 90-second overall startup budget. Each request gets at most 20 seconds or the remaining budget. It displays a connection status and disables duplicate submissions. Uploads and decision requests are not automatically replayed. Missing configuration, 403/429 responses and invalid CSRF output are not retried.
+
+Verification: **22 retry-safety checks and 56 browser checks passed**. Through the actual public Cloudflare API, a synthetic Microsoft DOCX was accepted (202), queued, processed and returned a valid 124-word letter at 28.25 seconds from session setup. The draft was rejected (200), and another visitor was denied access (404). The complete check, including rejection/isolation, took 39.59 seconds. No application was approved or saved. This checks the connected queue path, not whether Render has an independently running worker; other existing workers can consume the shared queue. Approved document downloads were not retested in this run.
+
+The frontend fix requires Cloudflare Pages to build the new commit. No n8n/backend/database change is needed for this fix. Bounded retries improve startup recovery; they do not remove hosting cold-start delays or guarantee instant generation.
+
 ## Current published one-call workflow, 2 November 2026
 
 The current generation import is [workflows/simple/Final Orchestrator.json](../workflows/simple/Final%20Orchestrator.json). Its README includes exact import and saved-credential setup. The simple/ folder name distinguishes this website-compatible design from earlier final/ and fast/ references; the workflow name remains **Final Orchestrator**.

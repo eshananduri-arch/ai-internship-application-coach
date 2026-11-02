@@ -25,13 +25,18 @@ async function visible(page, id) { await page.locator('#fr-' + id).waitFor({ sta
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
+  let sessionFailures = 0, sessionRequests = 0;
   let offline = true, failApproval = false, polls = 0, analysis = 0, saved = null, requests = [], wrongRole = false;
   await page.route('**/api/**', async route => {
     const req = route.request();
     const pathname = new URL(req.url()).pathname.replace('/api', '');
     const reply = (data, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(data) });
-    if (offline) return reply({ message: 'Backend not connected' }, 503);
-    if (pathname === '/session') return reply({ csrf_token: 'synthetic-csrf' });
+    if (offline) return reply({ message: 'Backend not connected', code: 'database_unconfigured' }, 503);
+    if (pathname === '/session') {
+      sessionRequests++;
+      if (sessionFailures-- > 0) return route.fulfill({ status: 502, contentType: 'text/html', body: '<h1>Bad Gateway</h1>' });
+      return reply({ csrf_token: 'synthetic-csrf' });
+    }
     if (pathname === '/companies') return reply([...new Set(catalog.map(row => row.company))].map(name => ({ name })));
     if (pathname === '/roles') return reply(catalog.filter(row => row.company === new URL(req.url()).searchParams.get('company')));
     if (pathname === '/analyses' && req.method() === 'POST') {
@@ -85,9 +90,14 @@ async function visible(page, id) { await page.locator('#fr-' + id).waitFor({ sta
   await page.click('#fr-generate');
   await visible(page, 'input-error');
   check((await page.textContent('#fr-input-error')).toLowerCase().includes('backend'), 'offline generation fails honestly without a fake letter');
-  offline = false;
+  offline = false; sessionFailures = 2;
   await page.click('#fr-generate');
+  await page.locator('#fr-connection-status').filter({ hasText: 'Waiting for the server' }).waitFor();
+  check(await page.isDisabled('#fr-generate') && analysis === 0, 'startup wait disables duplicate submissions and does not upload yet');
+  check(await page.locator('#fr-input-error').isHidden(), 'transient gateway failures show a connection status rather than an immediate error');
   await visible(page, 'review');
+  check(sessionRequests === 3 && analysis === 1, 'two startup 502 responses recover into exactly one resume upload');
+  check(await page.locator('#fr-connection-status').isHidden(), 'startup status clears after connection');
   check(polls > 0, 'processing response is polled until ready');
   check((await page.textContent('#fr-letter-body')).includes('Taylor Student'), 'review displays the current backend result');
   check(await page.locator('#fr-letter-body .fr-body').first().evaluate(el => getComputedStyle(el).textAlign) === 'justify', 'letter body is justified');

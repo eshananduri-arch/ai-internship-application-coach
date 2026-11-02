@@ -2,10 +2,10 @@ const base = document.querySelector('meta[name="api-base"]').content.replace(/\/
 let csrf = '';
 
 export class ApiError extends Error {
-  constructor(message, status = 0) { super(message); this.status = status; }
+  constructor(message, status = 0, transient = false) { super(message); this.status = status; this.transient = transient; }
 }
 
-async function request(path, { method = 'GET', body, key, binary = false, signal } = {}) {
+async function request(path, { method = 'GET', body, key, binary = false, signal, timeout = 30000 } = {}) {
   const headers = { Accept: binary ? '*/*' : 'application/json' };
   if (method !== 'GET') {
     if (!csrf) throw new ApiError('Your private session is unavailable. Please try again.');
@@ -18,27 +18,44 @@ async function request(path, { method = 'GET', body, key, binary = false, signal
   }
   let response;
   try {
-    response = await fetch(base + path, { method, headers, body, credentials: 'same-origin', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000) });
+    response = await fetch(base + path, { method, headers, body, credentials: 'same-origin', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(timeout)]) : AbortSignal.timeout(timeout) });
   } catch (error) {
     if (signal?.aborted) throw error;
-    throw new ApiError('The backend could not be reached. Check your connection and try again.');
+    throw new ApiError('The backend could not be reached. Check your connection and try again.', 0, true);
   }
   if (!response.ok) {
     let message = `The request failed (${response.status}). Please try again.`;
-    let hasMessage = false;
-    try { const data = await response.json(); if (typeof data.message === 'string') { message = data.message.slice(0, 300); hasMessage = true; } } catch { /* HTML errors are never displayed. */ }
-    if (!hasMessage && (response.status === 404 || response.status === 503)) message = 'The Python backend is not connected yet. This local frontend is ready for integration.';
-    throw new ApiError(message, response.status);
+    let hasMessage = false, code = '';
+    try { const data = await response.json(); code = typeof data.code === 'string' ? data.code : ''; if (typeof data.message === 'string') { message = data.message.slice(0, 300); hasMessage = true; } } catch { /* HTML errors are never displayed. */ }
+    if (!hasMessage && [502, 503, 504].includes(response.status)) message = 'The server is temporarily unavailable. Please try again shortly.';
+    const transient = [502, 503, 504].includes(response.status) && !['database_unconfigured', 'coaching_unconfigured'].includes(code);
+    throw new ApiError(message, response.status, transient);
   }
   if (binary) return response;
   try { return await response.json(); } catch { throw new ApiError('The backend returned an unreadable response. Please try again.'); }
 }
 
-export async function session() {
+// Retry only this pre-upload GET. Uploads, decisions and model requests are never replayed here.
+export async function session(onWaiting = () => {}) {
   csrf = '';
-  const data = await request('/session');
-  if (typeof data.csrf_token !== 'string' || !data.csrf_token) throw new ApiError('The backend did not create a private session.');
-  csrf = data.csrf_token;
+  const deadline = Date.now() + 90000;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    try {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) break;
+      const data = await request('/session', { timeout: Math.min(20000, remaining) });
+      if (typeof data.csrf_token !== 'string' || !data.csrf_token) throw new ApiError('The backend did not create a private session.');
+      csrf = data.csrf_token;
+      return;
+    } catch (error) {
+      if (!(error instanceof ApiError) || !error.transient) throw error;
+      const wait = Math.min(1000 * 2 ** attempt, 10000);
+      if (attempt === 9 || Date.now() + wait >= deadline) break;
+      onWaiting();
+      await new Promise(resolve => setTimeout(resolve, wait));
+    }
+  }
+  throw new ApiError('The server is temporarily unavailable. Your resume has not been submitted. Please try again shortly.', 503);
 }
 
 export async function catalog() {

@@ -4,7 +4,7 @@ Firstrole helps a visitor upload a resume, select an internship, review a tailor
 
 **The original v1.0.0 tag is a development checkpoint.** The current published coaching workflow is [Final Orchestrator](workflows/simple/README.md), using one Gemini 3.5 Flash-Lite request with a provider-enforced response schema and real MCP role/deadline/word-count evidence. On 2 November 2026, all 15 role generations passed on the first attempt and all 7 invalid-request cases passed. Measured webhook latency was 2.698-6.334 seconds (median 2.940); this is not a latency guarantee. See [test results](workflows/simple/TEST-RESULTS.json), [integration status](docs/INTEGRATION_STATUS.md), [the original checkpoint](docs/VERSION_1.md) and [the changelog](CHANGELOG.md).
 
-The frontend is deployed at https://ai-internship-application-coach.pages.dev and the backend at https://ai-internship-application-coach.onrender.com. This workflow revision requires no frontend/backend/database changes or manual hosting redeployment. The full deployed upload/approval/download journey was not retested with this revision.
+The frontend is deployed at https://ai-internship-application-coach.pages.dev and the backend at https://ai-internship-application-coach.onrender.com. This workflow revision requires no frontend/backend/database changes or manual hosting redeployment. A later synthetic deployed upload, queued generation, rejection and cross-visitor isolation test passed. Approved exports and independent hosted-worker availability were not retested.
 
 ## Project structure
 
@@ -28,7 +28,7 @@ npm run dev
 
 Open http://127.0.0.1:5173/. Running the static frontend needs Node.js but no dependency installation. See the [frontend README](frontend/README.md) for tests, the API contract and integration details.
 
-**Current status:** the local FastAPI API and durable worker connect to Supabase Mumbai using separate restricted database logins with verified TLS. The worker calls the published authenticated n8n Orchestrator, which uses Gemini 3.5 Flash-Lite and real MCP search/date/word-count tools. The Microsoft DOCX flow passed real upload, generation, approval and exact TXT/DOCX/PDF downloads. Backend tests: 32 passed; frontend mocked-API checks: 52 passed. Read the integration report for historical queue tests and current validation limits. The catalog remains fictional educational data. The published one-call Orchestrator has separate all-role webhook results; these do not prove the entire deployed queue/UI journey.
+**Current status:** the local FastAPI API and durable worker connect to Supabase Mumbai using separate restricted database logins with verified TLS. The worker calls the published authenticated n8n Orchestrator, which uses Gemini 3.5 Flash-Lite and real MCP search/date/word-count tools. The Microsoft DOCX flow passed real upload, generation, approval and exact TXT/DOCX/PDF downloads. Backend checkpoint tests: 32 passed; current frontend checks: 56 browser scenarios plus 22 session-recovery checks. Read the integration report for historical queue tests and current validation limits. The catalog remains fictional educational data. The published one-call Orchestrator has separate all-role webhook results; these do not prove the entire deployed queue/UI journey.
 
 ## Stack
 

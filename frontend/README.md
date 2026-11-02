@@ -1,6 +1,6 @@
 # Firstrole frontend
 
-Version **1.0.0** is the initial frontend release. Backend and database integration are pending.
+Version **1.0.0** is the initial frontend release. The deployed frontend connects through its same-origin Cloudflare API proxy to the Python backend and Supabase. See the current integration report for live-test scope.
 
 Local frontend for the AI Internship Application Coach. Matches the approved forest-green and ivory preview. The initial screen has no generated letter: upload a PDF/DOCX, select a company and role, and enter the signature name on one page.
 
@@ -53,11 +53,11 @@ frontend/
 
 ## Current storage and integration limits
 
-**There is no connected database or Python backend in this frontend deliverable.** Files, draft text and application IDs exist only in this tab's JavaScript memory. No resume or letter is written to localStorage, sessionStorage, browser databases, cookies, Git, or the local development server. Refreshing loses the current form and draft.
+The standalone static preview has no database connection. In the deployed application, the Python backend stores encrypted uploads/analyses and approved letters in Supabase with server-enforced visitor ownership. The browser keeps form/draft UI state in memory; its HttpOnly session cookie grants access to private records. No private resume/letter content or server secrets belong in Git or browser storage. Refreshing clears the unsent form and draft UI.
 
 The fictional role catalog is a public JSON file. Browser checks create synthetic test responses in isolated browser contexts; those are not live AI, database or document export tests.
 
-The next phase is a Python backend and PostgreSQL. Serve this folder and `/api` through one origin. The backend must create anonymous sessions, authorize every private record by session, validate files, run the n8n pipeline, store approved applications, and generate real document exports. See API_CONTRACT.md. There are no API keys or database credentials in this folder.
+The Python backend creates anonymous sessions, authorizes each private record, validates files, runs the queued n8n pipeline, stores approved applications and produces genuine document exports. Serve this folder and `/api` through one origin. See API_CONTRACT.md. There are no API keys or database credentials in this folder.
 
 No-login access persists only as long as the server-issued session cookie survives. Another browser/device or clearing cookies loses access unless a separate recovery mechanism is added. Session ownership must be enforced by the backend; client IDs alone are not authorization.
 
@@ -75,4 +75,10 @@ On Windows the runner can use installed Microsoft Edge. Set `PLAYWRIGHT_EXECUTAB
 
 Use the Python application or a reverse proxy for static files and same-origin API routing; the included server is for local development. Use HTTPS, no caching of private API responses, secure session cookies and appropriate response headers. Preserve paragraph justification in the backend DOCX/PDF export templates as well as in this browser view.
 
-The planned hosts are Cloudflare Pages for the frontend, Render for the Python API/worker, and Supabase for PostgreSQL. A same-origin API proxy or another reviewed session-routing design is needed before connecting those hosts. Do not deploy the local Node development server as the production backend. Publish only intended frontend assets, not the test scripts or development tools.
+The configured hosts are Cloudflare Pages for the frontend, Render for the Python API, and Supabase for PostgreSQL. The Cloudflare Pages function forwards same-origin `/api` requests to Render. A separate durable queue worker must remain available; the API is not itself a worker. Do not deploy the local Node development server as the production backend. Publish only intended frontend assets, not the test scripts or development tools.
+
+## API startup recovery
+
+Before sending a resume, session setup retries only transient GET network/502/503/504 errors for at most 10 attempts within 90 seconds. The UI shows a connection status and prevents duplicate submissions. Per-attempt timeout is bounded by 20 seconds and the remaining overall budget. Once a valid session is created, only one upload is sent. Uploads and approval/rejection decisions are never automatically replayed. Authentication errors, rate limits, missing configuration and malformed CSRF responses are not retried.
+
+`npm test` runs 22 deterministic session-recovery checks and 56 browser checks using synthetic API responses. The live deployed synthetic upload/generation/rejection/isolation result is recorded in `../docs/INTEGRATION_STATUS.md`. Changes to this frontend need a new Cloudflare Pages build; committing an n8n JSON file alone does not redeploy n8n.
